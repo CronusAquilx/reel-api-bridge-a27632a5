@@ -194,7 +194,7 @@ function ActiveTroll({ troll }: { troll: string }) {
       <iframe title="video" className="h-full w-full" src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&controls=0&loop=1&playlist=${id}`} allow="autoplay; fullscreen" />
     </div>;
   }
-  if (CSS[kind]) return <style>{CSS[kind]}</style>;
+  if (CSS[kind]) return <style>{CSS[kind]}{"@media(prefers-reduced-motion:reduce){#birch-app-surface{animation:none!important}}"}</style>;
   if (kind === "virus") return <Virus />;
   if (kind === "emoji" || kind === "confetti") return <Emoji party={kind === "confetti"} />;
   if (kind === "freeze") return <div className="fixed inset-0 z-[9996] grid place-items-center bg-background/80 text-foreground"><p className="text-2xl font-semibold">🧊 Simulated freeze</p></div>;

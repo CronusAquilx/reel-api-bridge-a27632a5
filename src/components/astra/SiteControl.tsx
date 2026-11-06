@@ -143,6 +143,7 @@ export function SiteControl() {
     const connection = createScreenPeer((payload) => { void ch.send({ type: "broadcast", event: "signal", payload }); });
     const stop = () => {
       stream?.getTracks().forEach((track) => { track.onended = null; track.stop(); });
+      for (const sender of connection.peer.getSenders()) connection.peer.removeTrack(sender);
       stream = null; setLiveSharing(false);
       void ch.send({ type: "broadcast", event: "signal", payload: { type: "stopped" } });
     };
@@ -166,7 +167,12 @@ export function SiteControl() {
     const tick = () => {
       if (document.hidden) return;
       const frame = captureFrame();
-      const json = JSON.stringify(frame);
+      let json = JSON.stringify(frame);
+      // Keep the preview moving even when a busy canvas exceeds broadcast limits.
+      if (json.length >= 280_000) {
+        for (const item of frame.items) if (item.media) delete item.img;
+        json = JSON.stringify(frame);
+      }
       if (json === last && Date.now() - lastSent < 10000) return; // nothing changed
       last = json; lastSent = Date.now();
       if (json.length < 300_000) void ch.send({ type: "broadcast", event: "frame", payload: frame });
