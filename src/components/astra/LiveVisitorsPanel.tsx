@@ -1,46 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ControlEvent, ScreenFrame } from "@/lib/astra/screen-share";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Pause, Play, LogOut, Send, Ban, Eye, X, UserPlus, MousePointer2, Maximize, Minimize, Megaphone, RotateCw, Navigation, Search, Shield, Trash2 } from "lucide-react";
+import { Pause, Play, LogOut, Send, Ban, Eye, UserPlus, Megaphone, RotateCw, Navigation, Search, Shield, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createDevAccount } from "@/lib/astra/dev-access.functions";
 import { roleCan, STAFF_ROLE_INFO, useStaffRole, type StaffRole } from "@/lib/astra/staff";
-import { TROLLS, youtubeId } from "./TrollLayer";
-import { broadcastBanCheck, pingDevice, useLiveVisitors, type LiveVisitor } from "./SiteControl";
-
-type Kind = "message" | "pause" | "resume" | "kick" | "ban" | "view" | "unview" | "redirect" | "reload" | "announce" | "unannounce" | "troll" | "untroll";
+import { ScreenViewer, TrollGrid } from "./ScreenViewer";
+import { broadcastBanCheck, useLiveVisitors, type LiveVisitor } from "./SiteControl";
+import { sendStaffCommand as send, visitorTarget as target, type StaffTarget as Target } from "@/lib/astra/staff-commands";
 
 function TrollMenu({ to, name }: { to: Target; name: string }) {
   const [open, setOpen] = useState(false);
-  const fire = (t: string) => { void send("troll", to, t, true).then((ok) => ok && toast.success(`Trolling ${name}`)); };
   return <>
     <Button size="sm" variant="secondary" onClick={() => setOpen((o) => !o)}>😈 Troll</Button>
-    {open && <div className="basis-full flex flex-wrap gap-1 rounded-md border border-border bg-muted/40 p-2">
-      {TROLLS.map((t) => <Button key={t.id} size="sm" variant="outline" onClick={() => fire(t.id)}>{t.emoji} {t.label}</Button>)}
-      <Button size="sm" variant="outline" onClick={() => { const u = prompt("YouTube link to play full screen"); const id = u ? youtubeId(u) : null; if (id) fire(`video:${id}`); else if (u) toast.error("That isn't a YouTube link."); }}>📺 YouTube video</Button>
-      <Button size="sm" variant="destructive" onClick={() => void send("untroll", to, undefined, true).then((ok) => ok && toast.success("Troll stopped"))}>Stop trolling</Button>
-    </div>}
+    {open && <div className="basis-full rounded-md border border-border bg-muted/40 p-2"><TrollGrid to={to} name={name} /></div>}
   </>;
 }
-type Target = { userId: string | null; deviceId?: string | null } | null;
-const DONE: Partial<Record<Kind, string>> = { message: "Message sent", kick: "Kicked", pause: "Screen paused", resume: "Screen resumed", redirect: "Sent to page", reload: "Reloaded", announce: "Announcement shown", unannounce: "Announcement cleared" };
-
-async function send(kind: Kind, to: Target, message?: string, quiet = false) {
-  const userId = to?.userId ?? null;
-  const device = !userId && to?.deviceId ? to.deviceId : null;
-  const { error } = await supabase.from("site_commands").insert({ kind, target: userId, target_device: device, message: message ?? null });
-  if (error) {
-    toast.error(error.message.includes("owner") ? error.message.includes("admin") ? "Only the owner can do that to an admin." : "The owner can't be kicked, paused or banned." : "You don't have permission for that.");
-    return false;
-  }
-  if (!userId) void pingDevice(device ?? "*");
-  if (!quiet && DONE[kind]) toast.success(DONE[kind]!);
-  return true;
-}
-const target = (v: LiveVisitor): Target => ({ userId: v.userId, deviceId: v.deviceId });
 
 async function banDevice(v: LiveVisitor): Promise<void> {
   if (v.owner) { toast.error("The owner can't be banned."); return; }
@@ -50,71 +27,6 @@ async function banDevice(v: LiveVisitor): Promise<void> {
   if (v.userId) await send("ban", target(v), undefined, true);
   void broadcastBanCheck();
   toast.success(`${v.name}'s device is banned`);
-}
-
-function ScreenViewer({ visitor, canControl, onClose }: { visitor: LiveVisitor; canControl: boolean; onClose: () => void }) {
-  const [frame, setFrame] = useState<ScreenFrame | null>(null);
-  const [control, setControl] = useState(false);
-  const [box, setBox] = useState(0);
-  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
-  const chRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [full, setFull] = useState(false);
-  useEffect(() => { const f = () => setFull(document.fullscreenElement === wrapRef.current); document.addEventListener("fullscreenchange", f); return () => document.removeEventListener("fullscreenchange", f); }, []);
-  const toggleFull = () => { if (document.fullscreenElement) void document.exitFullscreen(); else void wrapRef.current?.requestFullscreen?.(); };
-  useEffect(() => {
-    const id = crypto.randomUUID();
-    const to = target(visitor);
-    const ch = supabase.channel(`screen-${id}`, { config: { broadcast: { ack: false } } }).on("broadcast", { event: "frame" }, ({ payload }) => setFrame(payload as ScreenFrame));
-    ch.subscribe((s) => { if (s === "SUBSCRIBED") void send("view", to, id, true); });
-    chRef.current = ch;
-    return () => { chRef.current = null; void send("unview", to, undefined, true); void supabase.removeChannel(ch); };
-  }, [visitor.userId, visitor.deviceId]);
-  useEffect(() => {
-    const el = boxRef.current; if (!el) return;
-    const ro = new ResizeObserver(() => setBox(el.clientWidth)); ro.observe(el); return () => ro.disconnect();
-  }, [frame !== null]);
-  const ctl = (payload: ControlEvent) => { if (control) void chRef.current?.send({ type: "broadcast", event: "control", payload }); };
-  const scale = frame && box ? (full ? Math.min(window.innerWidth / frame.w, (window.innerHeight - 90) / frame.h) : box / frame.w) : 1;
-  const point = (e: React.MouseEvent) => { const r = boxRef.current!.getBoundingClientRect(); return { x: Math.round((e.clientX - r.left) / scale), y: Math.round((e.clientY - r.top) / scale) }; };
-  const click = (e: React.MouseEvent) => {
-    if (!control) return;
-    const p = point(e); ctl({ type: "click", ...p });
-    const id = Date.now(); setRipples((r) => [...r, { id, ...p }]); setTimeout(() => setRipples((r) => r.filter((x) => x.id !== id)), 500);
-  };
-  return (
-    <div ref={wrapRef} className={`space-y-2 rounded-lg border border-border bg-background p-3 ${full ? "flex flex-col justify-center overflow-hidden" : ""}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-foreground">Watching {visitor.name}{frame ? ` — ${frame.path}` : ""}</p>
-        <div className="flex gap-1">
-          {canControl && <Button size="sm" variant={control ? "default" : "secondary"} onClick={() => { setControl((c) => !c); boxRef.current?.focus(); }}><MousePointer2 />{control ? "Controlling" : "Take control"}</Button>}
-          <Button size="sm" variant="secondary" onClick={toggleFull}>{full ? <Minimize /> : <Maximize />}{full ? "Exit full screen" : "Full screen"}</Button>
-          <Button size="sm" variant="ghost" onClick={onClose}><X />Stop</Button>
-        </div>
-      </div>
-      {frame ? (
-        <div ref={boxRef} tabIndex={0} className={`relative ${full ? "mx-auto" : "w-full"} overflow-hidden rounded border border-border outline-none ${control ? "cursor-pointer ring-2 ring-primary" : ""}`}
-          style={{ height: frame.h * scale, width: full ? frame.w * scale : undefined, background: frame.bg }}
-          onClick={click}
-          onDoubleClick={() => { if (!control) toggleFull(); }}
-          onWheel={(e) => ctl({ type: "scroll", ...point(e), dy: Math.round(e.deltaY) })}
-          onKeyDown={(e) => { if (!control) return; e.preventDefault(); if (e.key.length === 1) ctl({ type: "type", text: e.key }); else ctl({ type: "key", key: e.key }); }}>
-          <div style={{ width: frame.w, height: frame.h, transform: `scale(${scale})`, transformOrigin: "0 0", position: "absolute", pointerEvents: "none" }}>
-            {frame.items.map((it, i) => it.img
-              ? <img key={i} src={it.img} alt="" style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, objectFit: it.media || it.icon ? "contain" : "cover", background: it.media ? "#000" : it.bg, borderRadius: it.r }} />
-              : <div key={i} style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, background: it.media ? "#111" : it.bg, border: it.bd ? `1px solid ${it.bd}` : undefined, borderRadius: it.r, color: it.c, fontSize: it.fs, fontWeight: it.fw, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", lineHeight: 1.2, display: "flex", alignItems: "center", justifyContent: it.media ? "center" : undefined }}>{it.media ? "▶ protected video / game" : it.t}</div>)}
-            {ripples.map((r) => <span key={r.id} className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-primary/60" style={{ left: r.x, top: r.y }} />)}
-          </div>
-          <button type="button" aria-label={full ? "Exit full screen" : "Full screen"} onClick={(e) => { e.stopPropagation(); toggleFull(); }}
-            className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-md bg-background/80 text-foreground shadow backdrop-blur hover:bg-background">
-            {full ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          </button>
-        </div>
-      ) : <p className="py-10 text-center text-sm text-muted-foreground">Waiting for their screen…</p>}
-      <p className="text-xs text-muted-foreground">{control ? "Click to click for them, scroll to scroll, and type while the screen is selected." : "Updates live, including icons. Videos and games show as live pictures; a few protected ones stay dark."}</p>
-    </div>
-  );
 }
 
 function Bans() {
@@ -229,7 +141,7 @@ export function LiveVisitorsPanel() {
           {can("reload") && <Button size="sm" variant="secondary" onClick={() => confirm("Reload everyone's page?") && void send("reload", null)}><RotateCw />Reload all</Button>}
         </div>
         <div className="relative"><Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-8" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find someone by name or page" /></div>
-        {watching && <ScreenViewer key={watching.key} visitor={watching} canControl={can("control")} onClose={() => setWatching(null)} />}
+        {watching && <ScreenViewer key={watching.key} visitor={watching} canControl={can("control")} canTroll={can("troll") && !watching.owner} onClose={() => setWatching(null)} />}
         <ul className="divide-y divide-border">
           {visitors.map((v) => {
             const to = target(v); const blocked = v.owner && role !== "owner";
