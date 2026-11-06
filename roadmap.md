@@ -1,5 +1,9 @@
 # Birchbeat import roadmap
 
+## Current request — restore missing wallpaper images
+- [ ] Replace dead wallpaper hosting links with durable current-project storage and keep the catalog portable for GitHub clones.
+- [ ] Verify representative thumbnails and video playback in Personalize; broad testing remains user-owned.
+
 ## Current request — smooth docked viewing and complete wallpapers
 - [x] Reduce target-side screen-capture work with adaptive idle-time snapshots, cached static pictures and media-only updates while retaining clear pictures.
 - [x] Keep the live viewer in a resizable non-modal dock so staff can use other controls while watching.
