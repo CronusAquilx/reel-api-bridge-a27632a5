@@ -88,7 +88,13 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     const to = visitorTarget(visitor);
     const id = sessionId.current;
     const channel = supabase.channel(`screen-${id}`, { config: { broadcast: { ack: false } } })
-      .on("broadcast", { event: "frame" }, ({ payload }) => { setFrame(payload as ScreenFrame); setLastFrame(Date.now()); });
+      .on("broadcast", { event: "frame" }, ({ payload }) => {
+        const next = payload as ScreenFrame;
+        setFrame((previous) => next.mediaOnly && previous
+          ? { ...previous, path: next.path, items: [...previous.items.filter((item) => !item.media), ...next.items] }
+          : next);
+        setLastFrame(Date.now());
+      });
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED") {
         subscribedRef.current = true; setConnected(true);
@@ -138,7 +144,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     const id = Date.now(); setRipples((all) => [...all, { id, ...p }]);
     setTimeout(() => setRipples((all) => all.filter((ripple) => ripple.id !== id)), 500);
   };
-  const fresh = Boolean(frame && now - lastFrame < 12_000);
+  const fresh = Boolean(frame && now - lastFrame < 25_000);
 
   return createPortal(<div className="pointer-events-none fixed inset-0 z-[10020]">
     <section ref={wrapRef} role="dialog" aria-modal="false" aria-label={`Screen viewer for ${visitor.name}`} className={`pointer-events-auto absolute flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-2xl ${full ? "inset-0 h-dvh w-full rounded-none" : "bottom-4 right-4 h-[min(680px,calc(100dvh-2rem))] w-[min(880px,calc(100vw-2rem))] resize-none rounded-xl sm:resize"}`}>

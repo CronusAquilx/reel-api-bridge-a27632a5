@@ -1,6 +1,6 @@
 /** Lightweight screen sharing: sends a layout outline (boxes, text, image links) instead of rendering pixels, so the shared tab stays fast. */
 export type ScreenItem = { x: number; y: number; w: number; h: number; bg?: string; c?: string; fs?: number; fw?: number; r?: string; t?: string; img?: string; media?: boolean; bd?: string; icon?: boolean };
-export type ScreenFrame = { w: number; h: number; path: string; bg: string; shot?: string; items: ScreenItem[] };
+export type ScreenFrame = { w: number; h: number; path: string; bg: string; shot?: string; items: ScreenItem[]; mediaOnly?: boolean };
 export type ControlEvent = { type: "click"; x: number; y: number } | { type: "type"; text: string } | { type: "key"; key: string } | { type: "scroll"; x: number; y: number; dy: number };
 
 const MAX_ITEMS = 650;
