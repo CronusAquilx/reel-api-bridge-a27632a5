@@ -1,12 +1,12 @@
 # Birchbeat import roadmap
 
 ## Current request — reliable screen viewing and portable wallpapers
-- [ ] Reproduce and fix troll effects leaving the target with a grey or unreadable screen.
-- [ ] Rebuild the staff screen viewer with clearer layout, working controls, connection state and useful scaling.
-- [ ] Add named/anonymous viewing and an optional target viewing notice without a schema change.
-- [ ] Add a larger set of reversible visual trolls directly to the active screen viewer.
-- [ ] Confirm all wallpaper catalog references are present and keep CDN pointer files portable through GitHub clones.
-- [ ] Run focused screen/troll/catalog checks; broad account and device testing remains user-owned.
+- [x] Scope troll effects to the viewport-sized app surface and normalize guest command cursors so consecutive effects cannot stick or collapse the desktop.
+- [x] Rebuild the staff viewer as a true full-screen portal with live screenshots, scaling, connection state, refresh and scoped controls.
+- [x] Add named/anonymous viewing and an optional target viewing notice without a schema change; stop applies only to its own session.
+- [x] Provide 34 reversible visual effects in the viewer, plus target Stop and Escape dismissal.
+- [x] Confirm all 3,944 catalog references resolve among 5,510 portable CDN pointers and document GitHub clone behavior.
+- [x] Pass 20 focused checks and a two-person staff/guest browser flow covering privacy, live pictures, upside-down, Stop, Escape and close; remote-control interaction remains user-tested.
 
 ## Current request — wallpaper transfer and independent accounts
 - [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
