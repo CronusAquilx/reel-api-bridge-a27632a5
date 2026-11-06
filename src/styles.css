@@ -917,8 +917,7 @@ html[data-wallpaper-motion="zoom"] .reference-wallpaper { animation: wallpaper-z
 .windows-desktop-center { left: 50%; top: 50%; width: min(440px, calc(100% - 48px)); pointer-events: none; }
 .windows-desktop-search { pointer-events: auto; }
 .windows-taskbar { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); margin-inline: 0; }
-.windows-desktop[data-full-window="true"] > .windows-taskbar,
-.windows-desktop[data-full-window="true"] > div:has(> .now-playing) { display: none; }
+.windows-desktop[data-full-window="true"] > .windows-taskbar { display: none; }
 .desktop-widget-canvas { position: absolute; inset: 0 0 82px; pointer-events: none; overflow: hidden; z-index: 2; }
 .desktop-widget-position { pointer-events: auto; }
 .desktop-widget-panel { display: flex; flex-direction: column; width: 100%; height: 100%; border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); background: var(--card); box-shadow: var(--desktop-shadow); overflow: hidden; }
