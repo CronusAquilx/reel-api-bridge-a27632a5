@@ -1,17 +1,5 @@
 # Birchbeat import roadmap
 
-## Current request — recipient safeguards and wallpaper audit
-- [x] Retain visible viewing notices, recipient-approved control, browser-approved live sharing and independent effect dismissal; covert viewing/control excluded.
-- [x] Recount source pointers: 523 current-project assets, 4,987 old-project references; no active transfer and no wallpaper image/video binaries in the repository. Git sync status cannot be verified here.
-- [x] Restore incomplete screen-sharing edits; latest compilation is clean and four focused effect/geometry tests pass.
-
-## Current request — effects, screen viewing and wallpaper portability
-- [x] Isolate effects from html/body, add eight bounded visual effects and independent Stop/Escape controls; browser-overload/crashing excluded. Focused isolation/recovery browser check passes; the reported target-device grey screen still needs paired reproduction.
-- [x] Implement height/width-fitted viewer, wrapping toolbar, freshness status, consent-based WebRTC media sharing, revocable target control and preview payload fallback.
-- [x] Count wallpaper ownership: 523 pointers belong to this project, 4,987 still belong to the old project (5,510 files total); no transfer process is running in this workspace. Git preserves CDN pointers, not offline media; clone limitations documented.
-- [x] Four focused geometry/effect tests pass; effect isolation and Stop control checked in browser; compilation clean.
-- [ ] Verify authenticated two-person live video/control, target-device grey-screen reproduction and narrow/fullscreen viewer appearance — automatic requesting-user session mint failed; needs preview sign-in and a second consenting browser tab. DRM and restrictive-network sharing remain unsupported limitations, not claimed fixed.
-
 ## Current request — wallpaper transfer and independent accounts
 - [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
 - [ ] Remember every added account and keep different browser tabs signed in independently.
