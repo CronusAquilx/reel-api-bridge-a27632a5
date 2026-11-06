@@ -7,6 +7,10 @@ describe("old Qaisify catalog and playback compatibility", () => {
     expect(qaisifyTrack({ trackId: 1, trackTimeMillis: 196000 }).id).toBe("itunes:1");
     expect(qaisifyTrack({ trackId: 1, trackTimeMillis: 196000 }).duration).toBe(196);
   });
+  it("keeps Apple's real audio preview for playback fallback", () => {
+    expect(qaisifyTrack({ trackId: 1, previewUrl: "https://audio-ssl.itunes.apple.com/song.m4a" }).preview).toBe("https://audio-ssl.itunes.apple.com/song.m4a");
+  });
+
   it("tries only public, processed, embeddable US-available videos", () => {
     const valid = { status: { embeddable: true, privacyStatus: "public", uploadStatus: "processed" } };
     expect(playableVideoIds(["aaaaaaaaaaa", "bbbbbbbbbbb", "ccccccccccc", "ddddddddddd"], [
