@@ -1,8 +1,8 @@
 # Birchbeat import roadmap
 
 ## Current request — restore missing wallpaper images
-- [ ] Replace dead wallpaper hosting links with durable current-project storage and keep the catalog portable for GitHub clones.
-- [ ] Verify representative thumbnails and video playback in Personalize; broad testing remains user-owned.
+- [x] Replace dead project-scoped hosting links with original full-quality DesktopHut media URLs and repair previously saved selections without changing custom uploads.
+- [x] Keep all 987 entries portable for GitHub clones; pass 21 focused checks and verify all 1,974 media URLs plus Personalize thumbnails and 4K playback.
 
 ## Current request — smooth docked viewing and complete wallpapers
 - [x] Reduce target-side screen-capture work with adaptive idle-time snapshots, cached static pictures and media-only updates while retaining clear pictures.
