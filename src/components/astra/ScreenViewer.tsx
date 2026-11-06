@@ -49,7 +49,7 @@ function OutlineItem({ item, index }: { item: ScreenItem; index: number }) {
   return <div key={index} className={item.media ? "flex items-center justify-center overflow-hidden bg-muted text-xs text-muted-foreground" : "flex items-center overflow-hidden whitespace-nowrap"} style={{ ...style, lineHeight: 1.2, textOverflow: "ellipsis" }}>{item.media ? "▶ protected video / game" : item.t}</div>;
 }
 
-/** Full-window staff workspace: a real screenshot when possible, DOM outline fallback, scoped remote input and reversible effects. */
+/** Non-modal staff dock: a real screenshot when possible, DOM outline fallback, scoped remote input and reversible effects. */
 export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   visitor: LiveVisitor;
   canControl: boolean;
@@ -65,7 +65,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   const [anonymous, setAnonymous] = useState(false);
   const [notify, setNotify] = useState(true);
   const [activeTroll, setActiveTroll] = useState<string | null>(null);
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [full, setFull] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
@@ -88,7 +88,13 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     const to = visitorTarget(visitor);
     const id = sessionId.current;
     const channel = supabase.channel(`screen-${id}`, { config: { broadcast: { ack: false } } })
-      .on("broadcast", { event: "frame" }, ({ payload }) => { setFrame(payload as ScreenFrame); setLastFrame(Date.now()); });
+      .on("broadcast", { event: "frame" }, ({ payload }) => {
+        const next = payload as ScreenFrame;
+        setFrame((previous) => next.mediaOnly && previous
+          ? { ...previous, path: next.path, items: [...previous.items.filter((item) => !item.media), ...next.items] }
+          : next);
+        setLastFrame(Date.now());
+      });
     channel.subscribe((status) => {
       if (status === "SUBSCRIBED") {
         subscribedRef.current = true; setConnected(true);
@@ -106,7 +112,9 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   useEffect(() => { announceView(); }, [anonymous, notify]);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 2000); return () => clearInterval(timer); }, []);
   useEffect(() => {
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape" && !document.fullscreenElement) onClose(); };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && (document.fullscreenElement || wrapRef.current?.contains(document.activeElement))) onClose();
+    };
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
   }, [onClose]);
   useEffect(() => {
@@ -136,9 +144,10 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     const id = Date.now(); setRipples((all) => [...all, { id, ...p }]);
     setTimeout(() => setRipples((all) => all.filter((ripple) => ripple.id !== id)), 500);
   };
-  const fresh = Boolean(frame && now - lastFrame < 12_000);
+  const fresh = Boolean(frame && now - lastFrame < 25_000);
 
-  return createPortal(<div ref={wrapRef} role="dialog" aria-modal="true" aria-label={`Screen viewer for ${visitor.name}`} className="fixed inset-0 z-[10020] flex h-dvh flex-col bg-background text-foreground">
+  return createPortal(<div className="pointer-events-none fixed inset-0 z-[10020]">
+    <section ref={wrapRef} role="dialog" aria-modal="false" aria-label={`Screen viewer for ${visitor.name}`} className={`pointer-events-auto absolute flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-2xl ${full ? "inset-0 h-dvh w-full rounded-none" : "bottom-4 right-4 h-[min(560px,calc(100dvh-5rem))] w-[min(760px,calc(100vw-2rem))] resize-none rounded-xl sm:resize"}`}>
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`size-2.5 shrink-0 rounded-full ${fresh ? "bg-primary" : "bg-muted-foreground"}`} />
@@ -165,7 +174,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     </div>
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      <main ref={stageRef} className="relative min-h-[45vh] flex-1 overflow-hidden bg-muted/50 p-3 lg:min-h-0">
+      <main ref={stageRef} className="relative min-h-56 flex-1 overflow-hidden bg-muted/50 p-3 lg:min-h-0">
         {frame ? <div ref={boxRef} tabIndex={0} aria-label="Shared screen. Select to use remote keyboard control." className={`absolute left-1/2 top-1/2 overflow-hidden rounded-md border border-border bg-background shadow-2xl outline-none ${control ? "cursor-crosshair ring-2 ring-primary" : ""}`}
           style={{ width: frame.w * scale, height: frame.h * scale, transform: "translate(-50%, -50%)", background: frame.bg }}
           onClick={click}
@@ -191,5 +200,6 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
       <span>{control ? "Click their screen to click, scroll to scroll, and type while it is selected." : "Choose Take control only when you need to interact."}</span>
       <span className="shrink-0">{frame?.shot ? "Live picture" : "Layout fallback"} · {fresh ? "Live" : "Waiting"}</span>
     </footer>
+    </section>
   </div>, document.body);
 }

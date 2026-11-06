@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOutAll } from "@/lib/auth";
-import { applyControl, captureLiveFrame, type ControlEvent } from "@/lib/astra/screen-share";
+import { applyControl, captureLiveFrame, captureMediaFrame, nextCaptureDelay, type ControlEvent, type ScreenFrame } from "@/lib/astra/screen-share";
 import { normalizeCommandCursor, parseViewSession, type ViewSession } from "@/lib/astra/view-session";
 import { visitorCommands } from "@/lib/astra/visitor-commands.functions";
 import { TrollLayer } from "./TrollLayer";
@@ -144,14 +144,43 @@ export function SiteControl() {
     const ch = supabase.channel(`screen-${viewId}`, { config: { broadcast: { ack: false } } });
     let live = true;
     let busy = false;
+    let dirty = true;
+    let forceBase = true;
     let last = "";
     let lastSent = 0;
+    let lastBase = 0;
+    let lastFrame: ScreenFrame | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | null = null;
     let controlTimer: ReturnType<typeof setTimeout> | undefined;
+    const markDirty = () => { dirty = true; };
+    const schedule = (delay = 2200) => {
+      if (!live) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!live) return;
+        if (document.hidden) { schedule(3000); return; }
+        if ("requestIdleCallback" in window) idleId = window.requestIdleCallback(() => { idleId = null; void tick(); }, { timeout: 750 });
+        else void tick();
+      }, delay);
+    };
     const tick = async () => {
       if (!live || busy) return;
       busy = true;
+      const started = performance.now();
       try {
-        const frame = await captureLiveFrame();
+        const resized = lastFrame && (lastFrame.w !== window.innerWidth || lastFrame.h !== window.innerHeight);
+        const sinceBase = Date.now() - lastBase;
+        const needsBase = forceBase || !lastFrame || resized || (dirty && sinceBase > 15_000) || sinceBase > 60_000;
+        if (needsBase) { dirty = false; forceBase = false; } // Mutations during capture remain dirty for the next pass.
+        let frame: ScreenFrame;
+        if (needsBase) {
+          frame = await captureLiveFrame();
+          lastFrame = frame; lastBase = Date.now();
+        } else {
+          const media = captureMediaFrame();
+          frame = media.items.length ? media : lastFrame!;
+        }
         if (!live) return;
         const json = JSON.stringify(frame);
         if (json === last && Date.now() - lastSent < 10000) return;
@@ -160,20 +189,34 @@ export function SiteControl() {
           void ch.send({ type: "broadcast", event: "frame", payload: frame });
         }
       } catch { /* captureLiveFrame already falls back */ }
-      finally { busy = false; }
+      finally { busy = false; schedule(nextCaptureDelay(performance.now() - started)); }
     };
+    const refresh = () => { dirty = true; forceBase = true; last = ""; schedule(0); };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
       setControlled(true);
       clearTimeout(controlTimer);
       controlTimer = setTimeout(() => setControlled(false), 4000);
       applyControl(payload as ControlEvent);
-      requestAnimationFrame(() => void tick());
-      setTimeout(() => void tick(), 180);
-    }).on("broadcast", { event: "refresh" }, () => { last = ""; void tick(); }).subscribe();
-    const timer = setInterval(() => void tick(), 900);
+      requestAnimationFrame(refresh);
+      setTimeout(refresh, 180);
+    }).on("broadcast", { event: "refresh" }, refresh).subscribe();
+    const observer = new MutationObserver(markDirty);
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    const visible = () => { if (!document.hidden) refresh(); };
+    document.addEventListener("visibilitychange", visible);
+    window.addEventListener("resize", markDirty);
+    window.addEventListener("scroll", markDirty, { passive: true, capture: true });
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
-    void tick();
-    return () => { live = false; clearInterval(timer); clearTimeout(end); clearTimeout(controlTimer); setControlled(false); void supabase.removeChannel(ch); };
+    schedule(0);
+    return () => {
+      live = false; clearTimeout(timer); clearTimeout(end); clearTimeout(controlTimer);
+      if (idleId !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("resize", markDirty);
+      window.removeEventListener("scroll", markDirty, { capture: true });
+      setControlled(false); void supabase.removeChannel(ch);
+    };
   }, [viewId]);
 
   if (banned) return (

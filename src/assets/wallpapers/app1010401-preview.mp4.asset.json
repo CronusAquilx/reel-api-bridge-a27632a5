@@ -1,11 +1,1 @@
-{
-  "version": 1,
-  "asset_id": "54eb60d8-3518-440e-bf2f-573cd8e1e0ec",
-  "project_id": "70f4628f-bd53-48ff-9e6d-417c5f46a3b1",
-  "url": "/__l5e/assets-v1/54eb60d8-3518-440e-bf2f-573cd8e1e0ec/app1010401-preview.mp4",
-  "r2_key": "a/v1/70f4628f-bd53-48ff-9e6d-417c5f46a3b1/54eb60d8-3518-440e-bf2f-573cd8e1e0ec/app1010401-preview.mp4",
-  "original_filename": "app1010401-preview.mp4",
-  "size": 338820,
-  "content_type": "video/mp4",
-  "created_at": "2026-11-06T01:38:43Z"
-}
+{"version":1,"asset_id":"54eb60d8-3518-440e-bf2f-573cd8e1e0ec","project_id":"70f4628f-bd53-48ff-9e6d-417c5f46a3b1","url":"https://aapbiology.lovable.app/__l5e/assets-v1/54eb60d8-3518-440e-bf2f-573cd8e1e0ec/app1010401-preview.mp4","r2_key":"a/v1/70f4628f-bd53-48ff-9e6d-417c5f46a3b1/54eb60d8-3518-440e-bf2f-573cd8e1e0ec/app1010401-preview.mp4","original_filename":"app1010401-preview.mp4","size":338820,"content_type":"video/mp4","created_at":"2026-11-06T01:38:43Z"}
