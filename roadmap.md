@@ -1,5 +1,11 @@
 # Birchbeat import roadmap
 
+## Current request — effects, screen viewing and wallpaper portability
+- [ ] Repair grey-screen effects and add bounded, dismissible visual effects; do not add browser overload/crashing.
+- [ ] Improve viewer sizing and controls; add user-approved live tab sharing for games/video, with protected-media limitations.
+- [ ] Count remaining wallpaper assets and document Git-portable asset references.
+- [ ] Run focused effect/viewer checks; leave broad provider playback testing to the user.
+
 ## Current request — wallpaper transfer and independent accounts
 - [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
 - [ ] Remember every added account and keep different browser tabs signed in independently.
