@@ -49,7 +49,7 @@ function OutlineItem({ item, index }: { item: ScreenItem; index: number }) {
   return <div key={index} className={item.media ? "flex items-center justify-center overflow-hidden bg-muted text-xs text-muted-foreground" : "flex items-center overflow-hidden whitespace-nowrap"} style={{ ...style, lineHeight: 1.2, textOverflow: "ellipsis" }}>{item.media ? "▶ protected video / game" : item.t}</div>;
 }
 
-/** Full-window staff workspace: a real screenshot when possible, DOM outline fallback, scoped remote input and reversible effects. */
+/** Non-modal staff dock: a real screenshot when possible, DOM outline fallback, scoped remote input and reversible effects. */
 export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   visitor: LiveVisitor;
   canControl: boolean;
@@ -106,7 +106,9 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   useEffect(() => { announceView(); }, [anonymous, notify]);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 2000); return () => clearInterval(timer); }, []);
   useEffect(() => {
-    const key = (event: KeyboardEvent) => { if (event.key === "Escape" && !document.fullscreenElement) onClose(); };
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && (document.fullscreenElement || wrapRef.current?.contains(document.activeElement))) onClose();
+    };
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
   }, [onClose]);
   useEffect(() => {

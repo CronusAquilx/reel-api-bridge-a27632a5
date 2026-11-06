@@ -146,10 +146,23 @@ export function SiteControl() {
     let busy = false;
     let last = "";
     let lastSent = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | null = null;
     let controlTimer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = (delay = 2200) => {
+      if (!live) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!live) return;
+        if (document.hidden) { schedule(3000); return; }
+        if ("requestIdleCallback" in window) idleId = window.requestIdleCallback(() => { idleId = null; void tick(); }, { timeout: 750 });
+        else void tick();
+      }, delay);
+    };
     const tick = async () => {
       if (!live || busy) return;
       busy = true;
+      const started = performance.now();
       try {
         const frame = await captureLiveFrame();
         if (!live) return;
@@ -160,20 +173,27 @@ export function SiteControl() {
           void ch.send({ type: "broadcast", event: "frame", payload: frame });
         }
       } catch { /* captureLiveFrame already falls back */ }
-      finally { busy = false; }
+      finally { busy = false; schedule(nextCaptureDelay(performance.now() - started)); }
     };
+    const refresh = () => { last = ""; schedule(0); };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
       setControlled(true);
       clearTimeout(controlTimer);
       controlTimer = setTimeout(() => setControlled(false), 4000);
       applyControl(payload as ControlEvent);
-      requestAnimationFrame(() => void tick());
-      setTimeout(() => void tick(), 180);
-    }).on("broadcast", { event: "refresh" }, () => { last = ""; void tick(); }).subscribe();
-    const timer = setInterval(() => void tick(), 900);
+      requestAnimationFrame(refresh);
+      setTimeout(refresh, 180);
+    }).on("broadcast", { event: "refresh" }, refresh).subscribe();
+    const visible = () => { if (!document.hidden) refresh(); };
+    document.addEventListener("visibilitychange", visible);
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
-    void tick();
-    return () => { live = false; clearInterval(timer); clearTimeout(end); clearTimeout(controlTimer); setControlled(false); void supabase.removeChannel(ch); };
+    schedule(0);
+    return () => {
+      live = false; clearTimeout(timer); clearTimeout(end); clearTimeout(controlTimer);
+      if (idleId !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
+      document.removeEventListener("visibilitychange", visible);
+      setControlled(false); void supabase.removeChannel(ch);
+    };
   }, [viewId]);
 
   if (banned) return (
