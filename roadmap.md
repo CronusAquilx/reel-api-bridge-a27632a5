@@ -1,5 +1,11 @@
 # Birchbeat import roadmap
 
+## Current request — wallpaper transfer and independent accounts
+- [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
+- [ ] Remember every added account and keep different browser tabs signed in independently.
+- [ ] Resolve qais and persius developer sign-in while preserving the existing 0307 server-side PIN check.
+- [ ] Run focused account/catalog checks; broad playback and visual testing remains user-owned.
+
 ## Current request — movie playback and remaining wallpapers
 - [x] Repair same-origin movie playback errors, restore twelve original server choices and keep guest public relay reads separate from authenticated mutations.
 - [x] Finish native wallpaper downloads: 985 originals connected, 434 native 4K-or-higher; two unavailable source videos retain previews.
