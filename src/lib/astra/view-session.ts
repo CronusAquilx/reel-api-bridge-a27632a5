@@ -4,6 +4,13 @@ export type ViewSession = {
   notify: boolean;
 };
 
+/** Database offsets (+00:00) are normalized to the Z format accepted by the command reader. */
+export const normalizeCommandCursor = (value: string) => {
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) throw new Error("Invalid command timestamp");
+  return new Date(time).toISOString();
+};
+
 const safeId = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9-]{8,80}$/.test(value);
 const safeName = (value: unknown) => typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : null;
 

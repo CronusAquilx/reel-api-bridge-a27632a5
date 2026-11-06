@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOutAll } from "@/lib/auth";
 import { applyControl, captureLiveFrame, type ControlEvent } from "@/lib/astra/screen-share";
-import { parseViewSession, type ViewSession } from "@/lib/astra/view-session";
+import { normalizeCommandCursor, parseViewSession, type ViewSession } from "@/lib/astra/view-session";
 import { visitorCommands } from "@/lib/astra/visitor-commands.functions";
 import { TrollLayer } from "./TrollLayer";
 
@@ -88,11 +88,13 @@ export function SiteControl() {
 
   useEffect(() => {
     const key = tabKey();
+    let pulling = false;
     const pullCommands = () => {
-      if (userRef.current) return; // signed-in tabs get commands directly
+      if (userRef.current || pulling) return; // signed-in tabs get commands directly
+      pulling = true;
       void fetchVisitor({ data: { deviceId: deviceId(), since: since.current } }).then((rows) => {
-        for (const r of rows) { since.current = r.created_at; handleRef.current(r); }
-      }).catch(() => {});
+        for (const r of rows) { since.current = normalizeCommandCursor(r.created_at); handleRef.current(r); }
+      }).catch(() => {}).finally(() => { pulling = false; });
     };
     const ch = supabase.channel("site-presence", { config: { presence: { key } } });
     ch.on("presence", { event: "sync" }, () => {
