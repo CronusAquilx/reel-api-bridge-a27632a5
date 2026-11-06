@@ -1,6 +1,6 @@
 /** Lightweight screen sharing: sends a layout outline (boxes, text, image links) instead of rendering pixels, so the shared tab stays fast. */
 export type ScreenItem = { x: number; y: number; w: number; h: number; bg?: string; c?: string; fs?: number; fw?: number; r?: string; t?: string; img?: string; media?: boolean; bd?: string; icon?: boolean };
-export type ScreenFrame = { w: number; h: number; path: string; bg: string; items: ScreenItem[] };
+export type ScreenFrame = { w: number; h: number; path: string; bg: string; shot?: string; items: ScreenItem[] };
 export type ControlEvent = { type: "click"; x: number; y: number } | { type: "type"; text: string } | { type: "key"; key: string } | { type: "scroll"; x: number; y: number; dy: number };
 
 const MAX_ITEMS = 650;
@@ -105,6 +105,38 @@ export function captureFrame(): ScreenFrame {
     el = walker.nextNode() as HTMLElement | null;
   }
   return { w, h, path: location.pathname, bg: getComputedStyle(document.body).backgroundColor, items };
+}
+
+let captureWarningShown = false;
+
+/** Capture actual rendered pixels first; the lightweight outline remains the fallback. */
+export async function captureLiveFrame(): Promise<ScreenFrame> {
+  const frame = captureFrame();
+  try {
+    const { toJpeg } = await import("html-to-image");
+    for (const [width, quality] of [[1120, 0.72], [860, 0.52]] as const) {
+      const shot = await toJpeg(document.body, {
+        canvasWidth: width,
+        canvasHeight: Math.round(width * frame.h / frame.w),
+        quality,
+        backgroundColor: frame.bg,
+        skipFonts: true,
+        filter: (node) => {
+          if (!(node instanceof HTMLElement)) return true;
+          if (node.dataset.screenShare === "skip") return false;
+          return !["IFRAME", "VIDEO", "EMBED", "OBJECT"].includes(node.tagName);
+        },
+      });
+      // A smaller retry protects the realtime message limit on busy desktops.
+      if (shot.length < 235_000) return { ...frame, shot, items: frame.items.filter((item) => item.media) };
+    }
+  } catch (error) {
+    if (!captureWarningShown) {
+      captureWarningShown = true;
+      console.warn("Screen picture unavailable; using layout fallback", error);
+    }
+  }
+  return frame;
 }
 
 function nextOutside(walker: TreeWalker, el: HTMLElement) {

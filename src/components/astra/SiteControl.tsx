@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOutAll } from "@/lib/auth";
-import { applyControl, captureFrame, type ControlEvent } from "@/lib/astra/screen-share";
+import { applyControl, captureLiveFrame, type ControlEvent } from "@/lib/astra/screen-share";
+import { parseViewSession, type ViewSession } from "@/lib/astra/view-session";
 import { visitorCommands } from "@/lib/astra/visitor-commands.functions";
 import { TrollLayer } from "./TrollLayer";
 
@@ -43,7 +44,7 @@ export function SiteControl() {
   const [paused, setPaused] = useState<string | null>(null);
   const [announce, setAnnounce] = useState<string | null>(null);
   const [banned, setBanned] = useState(false);
-  const [viewing, setViewing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<ViewSession | null>(null);
   const [idle, setIdle] = useState(false);
   const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
   const owner = user?.email?.toLowerCase() === OWNER_EMAIL;
@@ -58,8 +59,11 @@ export function SiteControl() {
     if (cmd.kind === "message") toast(cmd.message ?? "", { description: "Message from the staff", duration: 15000 });
     if (cmd.kind === "announce") setAnnounce(cmd.message || "Announcement");
     if (cmd.kind === "unannounce") setAnnounce(null);
-    if (cmd.kind === "view" && cmd.message) setViewing(cmd.message);
-    if (cmd.kind === "unview") setViewing(null);
+    if (cmd.kind === "view" && cmd.message) {
+      const session = parseViewSession(cmd.message);
+      if (session) setViewing(session);
+    }
+    if (cmd.kind === "unview" && (!cmd.message || viewing?.id === cmd.message)) setViewing(null);
     if (owner) return; // the owner can't be paused, redirected, kicked or banned
     if (cmd.kind === "pause") setPaused(cmd.message || "Your screen was paused by the staff.");
     if (cmd.kind === "resume") setPaused(null);
@@ -126,36 +130,45 @@ export function SiteControl() {
     return () => { void supabase.removeChannel(ch); };
   }, [user]);
 
-  // Live screen share: sends a light layout outline (only when it changes) and accepts remote control.
+  // Live screen share: sends real pictures when possible, with the layout outline as a safe fallback.
   const [controlled, setControlled] = useState(false);
+  const viewId = viewing?.id ?? null;
   useEffect(() => {
-    if (!viewing) return;
-    const ch = supabase.channel(`screen-${viewing}`, { config: { broadcast: { ack: false } } });
-    let last = ""; let lastSent = 0; let lastControl = 0;
-    const tick = () => {
-      if (document.hidden) return;
-      const frame = captureFrame();
-      const json = JSON.stringify(frame);
-      if (json === last && Date.now() - lastSent < 10000) return; // nothing changed
-      last = json; lastSent = Date.now();
-      if (json.length < 300_000) void ch.send({ type: "broadcast", event: "frame", payload: frame });
+    if (!viewId) return;
+    const ch = supabase.channel(`screen-${viewId}`, { config: { broadcast: { ack: false } } });
+    let live = true;
+    let busy = false;
+    let last = "";
+    let lastSent = 0;
+    let controlTimer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (!live || busy) return;
+      busy = true;
+      try {
+        const frame = await captureLiveFrame();
+        if (!live) return;
+        const json = JSON.stringify(frame);
+        if (json === last && Date.now() - lastSent < 10000) return;
+        if (json.length < 300_000) {
+          last = json; lastSent = Date.now();
+          void ch.send({ type: "broadcast", event: "frame", payload: frame });
+        }
+      } catch { /* captureLiveFrame already falls back */ }
+      finally { busy = false; }
     };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
-      setControlled(true); lastControl = Date.now();
+      setControlled(true);
+      clearTimeout(controlTimer);
+      controlTimer = setTimeout(() => setControlled(false), 4000);
       applyControl(payload as ControlEvent);
-      // Send the result right away (next paint) and once more after animations settle.
-      requestAnimationFrame(() => requestAnimationFrame(tick));
-      setTimeout(tick, 180);
-    }).subscribe();
-    const idleTick = () => {
-      if (Date.now() - lastControl < 5000) return tick(); // being controlled: skip idle waiting
-      if ("requestIdleCallback" in window) requestIdleCallback(tick, { timeout: 300 }); else tick();
-    };
-    const t = setInterval(idleTick, 300);
+      requestAnimationFrame(() => void tick());
+      setTimeout(() => void tick(), 180);
+    }).on("broadcast", { event: "refresh" }, () => { last = ""; void tick(); }).subscribe();
+    const timer = setInterval(() => void tick(), 900);
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
-    idleTick();
-    return () => { clearInterval(t); clearTimeout(end); setControlled(false); void supabase.removeChannel(ch); };
-  }, [viewing]);
+    void tick();
+    return () => { live = false; clearInterval(timer); clearTimeout(end); clearTimeout(controlTimer); setControlled(false); void supabase.removeChannel(ch); };
+  }, [viewId]);
 
   if (banned) return (
     <div className="fixed inset-0 z-[10000] grid place-items-center bg-background" role="alertdialog" aria-label="Banned">
@@ -167,7 +180,7 @@ export function SiteControl() {
   );
   return <>
     {troll && !owner && <TrollLayer key={troll} troll={troll} onEnd={() => setTroll(null)} />}
-    {viewing && <div data-screen-share="skip" className="fixed bottom-2 left-2 z-[9998] rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground">{controlled ? "Staff is controlling your screen" : "Staff is viewing your screen"}</div>}
+    {viewing?.notify && <div data-screen-share="skip" className="fixed bottom-2 left-2 z-[9998] rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground">{controlled ? `${viewing.name ?? "Staff"} is controlling your screen` : `${viewing.name ?? "Staff"} is viewing your screen`}</div>}
     {announce && (
       <div className="fixed inset-x-0 top-0 z-[9997] flex items-center justify-center gap-3 bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg" role="status">
         <span>📢 {announce}</span>
