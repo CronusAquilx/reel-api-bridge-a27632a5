@@ -88,6 +88,12 @@ export function SiteControl() {
 
   useEffect(() => {
     const key = tabKey();
+    const pullCommands = () => {
+      if (userRef.current) return; // signed-in tabs get commands directly
+      void fetchVisitor({ data: { deviceId: deviceId(), since: since.current } }).then((rows) => {
+        for (const r of rows) { since.current = r.created_at; handleRef.current(r); }
+      }).catch(() => {});
+    };
     const ch = supabase.channel("site-presence", { config: { presence: { key } } });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState<LiveVisitor>();
@@ -95,15 +101,13 @@ export function SiteControl() {
       emit();
     }).on("broadcast", { event: "ban-check" }, checkBan)
       .on("broadcast", { event: "device-ping" }, ({ payload }) => {
-        if (userRef.current) return; // signed-in tabs get commands directly
         const d = (payload as { deviceId?: string }).deviceId;
-        if (d !== "*" && d !== deviceId()) return;
-        void fetchVisitor({ data: { deviceId: deviceId(), since: since.current } }).then((rows) => {
-          for (const r of rows) { since.current = r.created_at; handleRef.current(r); }
-        }).catch(() => {});
+        if (d === "*" || d === deviceId()) pullCommands();
       })
       .subscribe((s) => { if (s === "SUBSCRIBED") { presence = ch; setChannel(ch); } });
-    return () => { presence = null; setChannel(null); void supabase.removeChannel(ch); };
+    // Broadcast is a fast hint, not a guarantee: recheck so a missed ping cannot leave a guest trolled or viewed.
+    const poll = window.setInterval(pullCommands, 1500);
+    return () => { window.clearInterval(poll); presence = null; setChannel(null); void supabase.removeChannel(ch); };
   }, []);
 
   useEffect(() => {
