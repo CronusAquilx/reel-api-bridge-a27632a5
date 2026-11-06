@@ -1,4 +1,5 @@
 import type { AppearanceLayout, AppearanceProfile } from "./appearance";
+import { repairWallpaperUrl } from "./wallpaper-live-sources";
 
 export type CatalogWallpaper = {
   id: string;
@@ -36,11 +37,12 @@ export function wallpaperCategories(item: CatalogWallpaper): WallpaperCategory[]
 }
 
 export function upgradeWallpaperSource(src: string, upgrades: Record<string, string>): string {
-  if (upgrades[src]) return upgrades[src];
+  let upgraded = upgrades[src] ?? src;
   try {
-    const path = new URL(src, "https://wallpaper.local").pathname;
-    return upgrades[path] ?? src;
-  } catch { return src; }
+    const path = new URL(upgraded, "https://wallpaper.local").pathname;
+    upgraded = upgrades[path] ?? upgraded;
+  } catch { /* Keep custom and otherwise invalid URLs unchanged. */ }
+  return repairWallpaperUrl(upgraded, "video") ?? upgraded;
 }
 
 export function wallpaperPatch(layout: AppearanceLayout, item: CatalogWallpaper): Partial<AppearanceProfile> {

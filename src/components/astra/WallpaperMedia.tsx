@@ -3,6 +3,7 @@ import { usePrefs } from "@/lib/astra/prefs";
 import { shouldPlayWallpaper } from "@/lib/astra/wallpaper-playback";
 import { WALLPAPER_VIDEO_UPGRADES } from "@/lib/astra/wallpaper-originals";
 import { upgradeWallpaperSource } from "@/lib/astra/wallpaper-catalog";
+import { repairWallpaperUrl } from "@/lib/astra/wallpaper-live-sources";
 
 /** Shared silent wallpaper playback; never used by standalone gameplay. */
 export function WallpaperMedia({ src, type, poster, className, reduceMotion = false, playback }: {
@@ -11,7 +12,8 @@ export function WallpaperMedia({ src, type, poster, className, reduceMotion = fa
   const prefs = usePrefs();
   const video = useRef<HTMLVideoElement>(null);
   const playbackChoice = playback ?? (poster ? true : undefined);
-  const mediaSrc = type === "video" ? upgradeWallpaperSource(src, WALLPAPER_VIDEO_UPGRADES) : src;
+  const mediaSrc = type === "video" ? upgradeWallpaperSource(src, WALLPAPER_VIDEO_UPGRADES) : repairWallpaperUrl(src, "image") ?? src;
+  const posterSrc = repairWallpaperUrl(poster, "image");
   useEffect(() => {
     const node = video.current;
     if (!node) return;
@@ -29,6 +31,6 @@ export function WallpaperMedia({ src, type, poster, className, reduceMotion = fa
     return () => { node.pause(); node.removeEventListener("loadeddata", update); node.removeEventListener("canplay", update); document.removeEventListener("visibilitychange", update); motion.removeEventListener("change", update); };
   }, [mediaSrc, type, reduceMotion, prefs.perfMode, playbackChoice]);
   return type === "video"
-    ? <video ref={video} key={mediaSrc} src={mediaSrc} poster={poster} muted loop playsInline preload="auto" aria-hidden="true" className={className} data-wallpaper-video="true"/>
+    ? <video ref={video} key={mediaSrc} src={mediaSrc} poster={posterSrc} muted loop playsInline preload="auto" aria-hidden="true" className={className} data-wallpaper-video="true"/>
     : <img src={src} alt="" width={1920} height={1080} className={className}/>;
 }

@@ -588,6 +588,7 @@ import video293 from "@/assets/wallpapers/app1003980-preview.mp4.asset.json";
 import image293 from "@/assets/wallpapers/app1003980-preview.jpg.asset.json";
 import type { CatalogWallpaper } from "./wallpaper-catalog";
 import { WALLPAPER_ORIGINALS } from "./wallpaper-originals";
+import { WALLPAPER_LIVE_SOURCES } from "./wallpaper-live-sources";
 import { DESKTOPHUT_EXTRA_WALLPAPERS } from "./desktophut-wallpapers-extra";
 
 const PREVIEW_WALLPAPERS: CatalogWallpaper[] = [
@@ -889,5 +890,8 @@ const PREVIEW_WALLPAPERS: CatalogWallpaper[] = [
 
 export const DESKTOPHUT_WALLPAPERS: CatalogWallpaper[] = [...PREVIEW_WALLPAPERS, ...DESKTOPHUT_EXTRA_WALLPAPERS].map(item => {
   const original = WALLPAPER_ORIGINALS[item.id];
-  return original ? { ...item, ...original, originalQuality: true } : { ...item, originalQuality: false };
+  const live = WALLPAPER_LIVE_SOURCES[item.id];
+  return live
+    ? { ...item, ...original, image: live.image, video: live.video, originalQuality: true }
+    : { ...item, ...original, originalQuality: Boolean(original) };
 });

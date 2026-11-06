@@ -1,5 +1,9 @@
 # Birchbeat import roadmap
 
+## Current request — restore missing wallpaper images
+- [x] Replace dead project-scoped hosting links with original full-quality DesktopHut media URLs and repair previously saved selections without changing custom uploads.
+- [x] Keep all 987 entries portable for GitHub clones; pass 21 focused checks and verify all 1,974 media URLs plus Personalize thumbnails and 4K playback.
+
 ## Current request — smooth docked viewing and complete wallpapers
 - [x] Reduce target-side screen-capture work with adaptive idle-time snapshots, cached static pictures and media-only updates while retaining clear pictures.
 - [x] Keep the live viewer in a resizable non-modal dock so staff can use other controls while watching.
