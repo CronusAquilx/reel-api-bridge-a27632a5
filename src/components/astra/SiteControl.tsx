@@ -144,11 +144,15 @@ export function SiteControl() {
     const ch = supabase.channel(`screen-${viewId}`, { config: { broadcast: { ack: false } } });
     let live = true;
     let busy = false;
+    let dirty = true;
     let last = "";
     let lastSent = 0;
+    let lastBase = 0;
+    let lastFrame: ScreenFrame | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let idleId: number | null = null;
     let controlTimer: ReturnType<typeof setTimeout> | undefined;
+    const markDirty = () => { dirty = true; };
     const schedule = (delay = 2200) => {
       if (!live) return;
       clearTimeout(timer);
@@ -164,7 +168,17 @@ export function SiteControl() {
       busy = true;
       const started = performance.now();
       try {
-        const frame = await captureLiveFrame();
+        const resized = lastFrame && (lastFrame.w !== window.innerWidth || lastFrame.h !== window.innerHeight);
+        const needsBase = dirty || !lastFrame || resized || Date.now() - lastBase > 30_000;
+        if (needsBase) dirty = false; // Mutations during capture remain dirty for the next pass.
+        let frame: ScreenFrame;
+        if (needsBase) {
+          frame = await captureLiveFrame();
+          lastFrame = frame; lastBase = Date.now();
+        } else {
+          const media = captureMediaFrame();
+          frame = media.items.length ? media : lastFrame!;
+        }
         if (!live) return;
         const json = JSON.stringify(frame);
         if (json === last && Date.now() - lastSent < 10000) return;
@@ -175,7 +189,7 @@ export function SiteControl() {
       } catch { /* captureLiveFrame already falls back */ }
       finally { busy = false; schedule(nextCaptureDelay(performance.now() - started)); }
     };
-    const refresh = () => { last = ""; schedule(0); };
+    const refresh = () => { dirty = true; last = ""; schedule(0); };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
       setControlled(true);
       clearTimeout(controlTimer);
@@ -184,14 +198,21 @@ export function SiteControl() {
       requestAnimationFrame(refresh);
       setTimeout(refresh, 180);
     }).on("broadcast", { event: "refresh" }, refresh).subscribe();
+    const observer = new MutationObserver(markDirty);
+    observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
     const visible = () => { if (!document.hidden) refresh(); };
     document.addEventListener("visibilitychange", visible);
+    window.addEventListener("resize", markDirty);
+    window.addEventListener("scroll", markDirty, { passive: true, capture: true });
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
     schedule(0);
     return () => {
       live = false; clearTimeout(timer); clearTimeout(end); clearTimeout(controlTimer);
       if (idleId !== null && "cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
+      observer.disconnect();
       document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("resize", markDirty);
+      window.removeEventListener("scroll", markDirty, { capture: true });
       setControlled(false); void supabase.removeChannel(ch);
     };
   }, [viewId]);
