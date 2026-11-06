@@ -1,4 +1,5 @@
 import type { AppearanceLayout, AppearanceProfile } from "./appearance";
+import { repairWallpaperUrl } from "./wallpaper-live-sources";
 
 export type CatalogWallpaper = {
   id: string;

@@ -588,6 +588,7 @@ import video293 from "@/assets/wallpapers/app1003980-preview.mp4.asset.json";
 import image293 from "@/assets/wallpapers/app1003980-preview.jpg.asset.json";
 import type { CatalogWallpaper } from "./wallpaper-catalog";
 import { WALLPAPER_ORIGINALS } from "./wallpaper-originals";
+import { WALLPAPER_LIVE_SOURCES } from "./wallpaper-live-sources";
 import { DESKTOPHUT_EXTRA_WALLPAPERS } from "./desktophut-wallpapers-extra";
 
 const PREVIEW_WALLPAPERS: CatalogWallpaper[] = [

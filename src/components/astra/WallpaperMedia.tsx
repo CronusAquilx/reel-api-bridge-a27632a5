@@ -3,6 +3,7 @@ import { usePrefs } from "@/lib/astra/prefs";
 import { shouldPlayWallpaper } from "@/lib/astra/wallpaper-playback";
 import { WALLPAPER_VIDEO_UPGRADES } from "@/lib/astra/wallpaper-originals";
 import { upgradeWallpaperSource } from "@/lib/astra/wallpaper-catalog";
+import { repairWallpaperUrl } from "@/lib/astra/wallpaper-live-sources";
 
 /** Shared silent wallpaper playback; never used by standalone gameplay. */
 export function WallpaperMedia({ src, type, poster, className, reduceMotion = false, playback }: {

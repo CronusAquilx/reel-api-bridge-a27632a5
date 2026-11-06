@@ -3,6 +3,7 @@ import manifest from "@/assets/wallpapers/native/manifest.json";
 import { DESKTOPHUT_WALLPAPERS } from "./desktophut-wallpapers";
 import { WALLPAPER_ORIGINALS, WALLPAPER_VIDEO_UPGRADES } from "./wallpaper-originals";
 import { upgradeWallpaperSource } from "./wallpaper-catalog";
+import { WALLPAPER_LIVE_SOURCES } from "./wallpaper-live-sources";
 
 describe("completed native wallpaper imports", () => {
   it("connects all 985 available originals without discarding the two unavailable previews", () => {
