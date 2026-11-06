@@ -65,7 +65,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   const [anonymous, setAnonymous] = useState(false);
   const [notify, setNotify] = useState(true);
   const [activeTroll, setActiveTroll] = useState<string | null>(null);
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [full, setFull] = useState(false);
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);

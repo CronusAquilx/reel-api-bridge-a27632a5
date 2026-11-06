@@ -1,11 +1,1 @@
-{
-  "version": 1,
-  "asset_id": "8098a799-cca8-497d-8bf0-909cf8f94d24",
-  "project_id": "70f4628f-bd53-48ff-9e6d-417c5f46a3b1",
-  "url": "/__l5e/assets-v1/8098a799-cca8-497d-8bf0-909cf8f94d24/app1004153-preview.mp4",
-  "r2_key": "a/v1/70f4628f-bd53-48ff-9e6d-417c5f46a3b1/8098a799-cca8-497d-8bf0-909cf8f94d24/app1004153-preview.mp4",
-  "original_filename": "app1004153-preview.mp4",
-  "size": 315333,
-  "content_type": "video/mp4",
-  "created_at": "2026-11-06T01:37:38Z"
-}
+{"version":1,"asset_id":"8098a799-cca8-497d-8bf0-909cf8f94d24","project_id":"70f4628f-bd53-48ff-9e6d-417c5f46a3b1","url":"https://aapbiology.lovable.app/__l5e/assets-v1/8098a799-cca8-497d-8bf0-909cf8f94d24/app1004153-preview.mp4","r2_key":"a/v1/70f4628f-bd53-48ff-9e6d-417c5f46a3b1/8098a799-cca8-497d-8bf0-909cf8f94d24/app1004153-preview.mp4","original_filename":"app1004153-preview.mp4","size":315333,"content_type":"video/mp4","created_at":"2026-11-06T01:37:38Z"}

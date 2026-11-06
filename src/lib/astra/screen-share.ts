@@ -109,17 +109,40 @@ export function captureFrame(): ScreenFrame {
 
 let captureWarningShown = false;
 
-/** Capture actual rendered pixels first; the lightweight outline remains the fallback. */
+/** Only the media layers need a second pass after a successful picture; avoid walking/styling the whole DOM. */
+function captureMediaItems(frame: Pick<ScreenFrame, "w" | "h">): ScreenItem[] {
+  mediaShots = 0;
+  const items: ScreenItem[] = [];
+  for (const el of document.body.querySelectorAll<HTMLElement>("video,iframe,canvas,embed,object")) {
+    if (items.length >= MAX_MEDIA || el.closest("[data-screen-share='skip']")) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.right < 0 || r.top > frame.h || r.left > frame.w) continue;
+    const item: ScreenItem = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), media: true };
+    const shot = snapshotMedia(el);
+    if (shot) { item.img = shot; mediaShots++; }
+    items.push(item);
+  }
+  return items;
+}
+
+/** Backs off when captures are expensive so screen viewing never competes with the visitor's own interactions. */
+export function nextCaptureDelay(captureMs: number): number {
+  if (!Number.isFinite(captureMs) || captureMs < 0) return 6000;
+  return Math.min(8000, Math.max(2200, Math.round(captureMs * 12)));
+}
+
+/** Capture actual rendered pixels first; only pay for the full DOM outline when pixels are unavailable. */
 export async function captureLiveFrame(): Promise<ScreenFrame> {
-  const frame = captureFrame();
+  const w = window.innerWidth, h = window.innerHeight;
+  const base = { w, h, path: location.pathname, bg: getComputedStyle(document.body).backgroundColor };
   try {
     const { toJpeg } = await import("html-to-image");
     for (const [width, quality] of [[1120, 0.72], [860, 0.52]] as const) {
       const shot = await toJpeg(document.body, {
         canvasWidth: width,
-        canvasHeight: Math.round(width * frame.h / frame.w),
+        canvasHeight: Math.round(width * h / w),
         quality,
-        backgroundColor: frame.bg,
+        backgroundColor: base.bg,
         skipFonts: true,
         filter: (node) => {
           if (!(node instanceof HTMLElement)) return true;
@@ -128,7 +151,7 @@ export async function captureLiveFrame(): Promise<ScreenFrame> {
         },
       });
       // A smaller retry protects the realtime message limit on busy desktops.
-      if (shot.length < 235_000) return { ...frame, shot, items: frame.items.filter((item) => item.media) };
+      if (shot.length < 235_000) return { ...base, shot, items: captureMediaItems(base) };
     }
   } catch (error) {
     if (!captureWarningShown) {
@@ -136,7 +159,7 @@ export async function captureLiveFrame(): Promise<ScreenFrame> {
       console.warn("Screen picture unavailable; using layout fallback", error);
     }
   }
-  return frame;
+  return captureFrame();
 }
 
 function nextOutside(walker: TreeWalker, el: HTMLElement) {

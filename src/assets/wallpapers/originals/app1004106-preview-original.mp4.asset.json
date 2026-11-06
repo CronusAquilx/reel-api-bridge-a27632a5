@@ -1,11 +1,1 @@
-{
-  "version": 1,
-  "asset_id": "6c53ef12-4599-41b5-b255-f57a4e9690e4",
-  "project_id": "7ca9a6d4-424c-4f58-accb-229889c0d6d1",
-  "url": "/__l5e/assets-v1/6c53ef12-4599-41b5-b255-f57a4e9690e4/app1004106-preview.mp4",
-  "r2_key": "a/v1/7ca9a6d4-424c-4f58-accb-229889c0d6d1/6c53ef12-4599-41b5-b255-f57a4e9690e4/app1004106-preview.mp4",
-  "original_filename": "app1004106-preview.mp4",
-  "size": 752523,
-  "content_type": "video/mp4",
-  "created_at": "2026-11-05T04:31:43Z"
-}
+{"version":1,"asset_id":"6c53ef12-4599-41b5-b255-f57a4e9690e4","project_id":"7ca9a6d4-424c-4f58-accb-229889c0d6d1","url":"https://reel-api-bridge.lovable.app/__l5e/assets-v1/6c53ef12-4599-41b5-b255-f57a4e9690e4/app1004106-preview.mp4","r2_key":"a/v1/7ca9a6d4-424c-4f58-accb-229889c0d6d1/6c53ef12-4599-41b5-b255-f57a4e9690e4/app1004106-preview.mp4","original_filename":"app1004106-preview.mp4","size":752523,"content_type":"video/mp4","created_at":"2026-11-05T04:31:43Z"}

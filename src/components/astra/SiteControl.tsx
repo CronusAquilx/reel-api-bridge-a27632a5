@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOutAll } from "@/lib/auth";
-import { applyControl, captureLiveFrame, type ControlEvent } from "@/lib/astra/screen-share";
+import { applyControl, captureLiveFrame, nextCaptureDelay, type ControlEvent } from "@/lib/astra/screen-share";
 import { normalizeCommandCursor, parseViewSession, type ViewSession } from "@/lib/astra/view-session";
 import { visitorCommands } from "@/lib/astra/visitor-commands.functions";
 import { TrollLayer } from "./TrollLayer";
