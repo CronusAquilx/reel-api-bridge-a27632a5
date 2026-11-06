@@ -1,9 +1,9 @@
 # Birchbeat import roadmap
 
 ## Current request — audible music playback
-- [ ] Trace the existing shared player and restore reliable song audio without replacing playlists, library or layout controls.
-- [ ] Provide working YouTube playback with a clear fallback when a video is unavailable or blocked.
-- [ ] Run focused playback checks and verify audible playback through the real Music interface.
+- [x] Restore the shared player with key-free YouTube song discovery while preserving playlists, library and layout controls.
+- [x] Retain Apple audio previews and relay them through the music service as a fallback when full video playback is unavailable.
+- [x] Pass 10 focused music checks; verify Daft Punk's One More Time starts in YouTube's official player, advances and plays inside the real Music interface.
 
 ## Current request — restore missing wallpaper images
 - [x] Replace dead project-scoped hosting links with original full-quality DesktopHut media URLs and repair previously saved selections without changing custom uploads.
