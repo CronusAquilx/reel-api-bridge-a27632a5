@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, UserRound, ArrowLeft, LogIn } from "lucide-react";
+import { Plus, UserRound, ArrowLeft, LogIn, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { usePrefs, activatePreferenceAccount, getPrefsSnapshot } from "@/lib/astra/prefs";
@@ -16,6 +16,7 @@ import { useVisit, visitDestination } from "@/lib/console/visit";
 import { ConsoleShell } from "@/components/console/ConsoleShell";
 import { useClock } from "@/lib/console/ctx";
 import { DevPanel } from "@/components/astra/DevPanel";
+import { activateSavedAccount, forgetSavedAccount, listSavedAccounts, subscribeToSavedAccounts, type SavedAccountInfo } from "@/lib/astra/tab-sessions";
 
 export function AuthPage() {
   const { session, user, enterGuest } = useAuth(); const { send } = useVisit(); const p = usePrefs();
@@ -23,9 +24,16 @@ export function AuthPage() {
   const [mode, setMode] = useState<"picker"|"in"|"up">("picker");
   const [username,setUsername]=useState(""); const [password,setPassword]=useState(""); const [email,setEmail]=useState("");
   const [busy,setBusy]=useState(false); const [message,setMessage]=useState(""); const [devOpen,setDevOpen]=useState(false);
+  const [savedAccounts,setSavedAccounts]=useState<SavedAccountInfo[]>([]);
   const login=useServerFn(usernameSignIn);const signup=useServerFn(usernameSignUp);const status=useServerFn(accountSetupStatus);
   const name=String(user?.user_metadata?.["name"]??user?.user_metadata?.["full_name"]??user?.email?.split("@")[0]??"Player");
+  const otherAccounts=savedAccounts.filter(account=>account.id!==user?.id);
   const skin=p.console==="sony"?"PlayStation / PS5":p.console==="series"?"Xbox Series X":p.console==="wii"?"Wii":p.console==="neutral"?"Neutral":p.layout==="switch"?"Switch":p.layout==="macos"?"macOS":p.layout==="ipad"?"iPad":"Windows";
+  useEffect(()=>{
+    const refresh=()=>setSavedAccounts(listSavedAccounts());
+    refresh();
+    return subscribeToSavedAccounts(refresh);
+  },[]);
   useEffect(()=>{
     const onKey=(e:KeyboardEvent)=>{
       const t=e.target as HTMLElement|null;
@@ -51,11 +59,20 @@ export function AuthPage() {
       await enter();
     }catch(err){setMessage(err instanceof Error?err.message:"Couldn't sign in.");}finally{setBusy(false);}
   }
+  async function switchAccount(id:string) {
+    setBusy(true);setMessage("");
+    try {
+      await queryClient.cancelQueries();queryClient.clear();
+      const result=await activateSavedAccount(id);if(result.error)throw result.error;
+      await enter();
+    } catch(err) { setMessage(err instanceof Error?err.message:"Couldn't switch accounts."); }
+    finally { setBusy(false); }
+  }
   async function guest() {
     setBusy(true);
     try{
       await queryClient.cancelQueries();queryClient.clear();
-      const result=await supabase.auth.signOut();if(result.error)throw result.error;
+      const result=await supabase.auth.signOut({scope:"local"});if(result.error)throw result.error;
       enterGuest();send("account-confirmed");await navigate({to:visitDestination(p),replace:true});
     }
     catch(err){setMessage(err instanceof Error?err.message:"Couldn't continue as guest.");}finally{setBusy(false);}
@@ -76,7 +93,7 @@ export function AuthPage() {
         <div className="flex flex-col items-center gap-4"><Button variant="console" size="console" className="flex size-24 items-center justify-center rounded-full bg-console-foreground/10 md:size-32" aria-label="Add user" onClick={()=>change("up")}><Plus className="size-9"/></Button><span>Add User</span></div>
         {session&&<div className="flex flex-col items-center gap-4"><Button variant="console" size="console" className="flex size-24 items-center justify-center rounded-full bg-console-panel/80 text-4xl ring-2 ring-console-accent md:size-32" aria-label={`Continue as ${name}`} disabled={busy} onClick={()=>{setBusy(true);void enter().catch(e=>setMessage(e.message)).finally(()=>setBusy(false));}}>{name.slice(0,1).toUpperCase()}</Button><span>{name}</span></div>}
         <div className="flex flex-col items-center gap-4"><Button variant="console" size="console" className="flex size-24 items-center justify-center rounded-full bg-console-foreground/10 md:size-32" aria-label="Sign in to another account" onClick={()=>change("in")}><LogIn className="size-9"/></Button><span>Sign In</span></div>
-      </div><Button variant="console" size="console" className="mt-10 rounded-full bg-console-foreground/15 px-10 py-3" disabled={busy} onClick={guest}><UserRound/>Continue without an account</Button><p className="mt-3 max-w-md text-sm text-console-foreground/65">Guest play: same layout as an account, but game progress, movie history and music playlists won&apos;t be saved.</p></>:<div className="console-login-form mt-8 w-full max-w-md text-left"><div className="mx-auto mb-7 flex size-24 items-center justify-center rounded-full bg-console-foreground/15 text-4xl">{username?username.slice(0,1).toUpperCase():<UserRound className="size-10"/>}</div><form onSubmit={submit} className="space-y-4">
+      </div>{otherAccounts.length>0&&<div className="mt-10"><p className="mb-5 text-sm text-console-foreground/65">Saved accounts</p><div className="flex flex-wrap items-start justify-center gap-6">{otherAccounts.map(account=><div key={account.id} className="relative flex w-28 flex-col items-center gap-3"><Button variant="console" size="console" className="flex size-20 items-center justify-center rounded-full bg-console-panel/80 text-3xl md:size-24" aria-label={`Switch to ${account.name}`} disabled={busy} onClick={()=>void switchAccount(account.id)}>{account.name.slice(0,1).toUpperCase()}</Button><span className="max-w-full truncate">{account.name}</span><Button variant="ghost" size="icon" className="absolute -right-1 -top-2 size-7 rounded-full" aria-label={`Remove ${account.name} from saved accounts`} disabled={busy} onClick={()=>forgetSavedAccount(account.id)}><X className="size-4"/></Button></div>)}</div></div>}<Button variant="console" size="console" className="mt-10 rounded-full bg-console-foreground/15 px-10 py-3" disabled={busy} onClick={guest}><UserRound/>Continue without an account</Button><p className="mt-3 max-w-md text-sm text-console-foreground/65">Guest play: same layout as an account, but game progress, movie history and music playlists won&apos;t be saved.</p></>:<div className="console-login-form mt-8 w-full max-w-md text-left"><div className="mx-auto mb-7 flex size-24 items-center justify-center rounded-full bg-console-foreground/15 text-4xl">{username?username.slice(0,1).toUpperCase():<UserRound className="size-10"/>}</div><form onSubmit={submit} className="space-y-4">
         <div className="space-y-2"><Label htmlFor="username">{mode==="up"?"Name / Username":"Username"}</Label><Input id="username" required autoComplete="username" value={username} onChange={e=>setUsername(e.target.value)} placeholder={mode==="up"?"Your username":"Username or existing account email"} minLength={mode==="up"?3:1} maxLength={mode==="up"?24:254}/></div>
         <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" autoComplete={mode==="up"?"new-password":"current-password"} required minLength={mode==="up"?6:1} value={password} onChange={e=>setPassword(e.target.value)}/></div>
         {mode==="up"&&<><div className="space-y-2"><Label htmlFor="contact-email">Email (optional)</Label><Input id="contact-email" type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></div><p className="text-xs text-console-foreground/65">Use your username to sign in. Optional email is contact information only; email password recovery isn&apos;t available for username accounts.</p></>}
