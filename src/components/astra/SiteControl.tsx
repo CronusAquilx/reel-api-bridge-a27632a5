@@ -170,8 +170,9 @@ export function SiteControl() {
       const started = performance.now();
       try {
         const resized = lastFrame && (lastFrame.w !== window.innerWidth || lastFrame.h !== window.innerHeight);
-        const needsBase = dirty || !lastFrame || resized || Date.now() - lastBase > 30_000;
-        if (needsBase) dirty = false; // Mutations during capture remain dirty for the next pass.
+        const sinceBase = Date.now() - lastBase;
+        const needsBase = forceBase || !lastFrame || resized || (dirty && sinceBase > 15_000) || sinceBase > 60_000;
+        if (needsBase) { dirty = false; forceBase = false; } // Mutations during capture remain dirty for the next pass.
         let frame: ScreenFrame;
         if (needsBase) {
           frame = await captureLiveFrame();
@@ -190,7 +191,7 @@ export function SiteControl() {
       } catch { /* captureLiveFrame already falls back */ }
       finally { busy = false; schedule(nextCaptureDelay(performance.now() - started)); }
     };
-    const refresh = () => { dirty = true; last = ""; schedule(0); };
+    const refresh = () => { dirty = true; forceBase = true; last = ""; schedule(0); };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
       setControlled(true);
       clearTimeout(controlTimer);
@@ -200,7 +201,7 @@ export function SiteControl() {
       setTimeout(refresh, 180);
     }).on("broadcast", { event: "refresh" }, refresh).subscribe();
     const observer = new MutationObserver(markDirty);
-    observer.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     const visible = () => { if (!document.hidden) refresh(); };
     document.addEventListener("visibilitychange", visible);
     window.addEventListener("resize", markDirty);
