@@ -137,12 +137,25 @@ function clearProxy() { proxyFrame?.remove(); proxyFrame = null; if (typeof docu
 function proxyOrAudio(t: Track, my: number) { clearProxy(); return audioFallback(t, my); }
 async function audioFallback(t: Track, my: number) {
   ensure();
+  const startAudio = async (url: string, label: string) => {
+    if (my !== playId || !audio) return;
+    audio.src = `/api/music?op=audio&u=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`;
+    set({ mode: "audio", status: label });
+    await audio.play();
+    if (my === playId) set({ loading: false, paused: false });
+  };
   try {
     const r = await musicApi<{ url: string | null; server?: string }>({ op: "resolve", server: "auto", q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist, duration: String(t.duration || 0), preview: t.preview ?? "" });
-    if (my !== playId || !audio) return;
-    if (r.url) { audio.src = `/api/music?op=audio&u=${encodeURIComponent(r.url)}&token=${encodeURIComponent(token)}`; set({ mode: "audio", status: r.server ?? "Audio" }); await audio.play(); if (my === playId) set({ loading: false, paused: false }); return; }
-  } catch { /* fall through to proxy player */ }
-  if (my === playId) set({ loading: false, paused: true, status: "Open the proxied player to listen" });
+    if (r.url) { await startAudio(r.url, r.server ?? "Audio"); return; }
+  } catch { /* try the verified store preview below */ }
+  if (my !== playId) return;
+  if (t.preview) {
+    try {
+      const r = await musicApi<{ url: string | null }>({ op: "resolve", server: t.source === "itunes" ? "itunes" : "deezer", q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist, preview: t.preview });
+      if (r.url) { await startAudio(r.url, "30-second preview · full video unavailable"); return; }
+    } catch { /* show the remaining YouTube action below */ }
+  }
+  if (my === playId) set({ loading: false, paused: true, fallbackId: candidates[candidateIndex] ?? null, status: "Couldn't start audio — try another song" });
 }
 export function toggle() { ensure(); if (proxyFrame) { clearProxy(); set({ paused: true }); return; } if (state.mode === "audio" && audio?.src) { if (audio.paused) void audio.play().catch(() => set({ status: "Press play again", loading: false })); else audio.pause(); } else if (state.mode === "video" && yt) { if (state.paused) yt.playVideo(); else yt.pauseVideo(); } else if (state.cur >= 0) void playList(state.queue, state.cur); }
 export function next() { const index = nextQueueIndex(state.cur, state.queue.length, state.repeat, state.shuffle); if (index >= 0) void playList(state.queue, index); else { audio?.pause(); yt?.pauseVideo(); stopPolling(); set({ paused: true, loading: false }); } }
