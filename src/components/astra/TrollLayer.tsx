@@ -123,9 +123,10 @@ const PARTICLES: Record<string, string[]> = {
   ducks: ["🦆", "🐤", "🪿"],
 };
 function Particles({ kind }: { kind: keyof typeof PARTICLES }) {
+  const choices = PARTICLES[kind];
   const items = useRef(Array.from({ length: 36 }, () => ({
     left: Math.random() * 100, duration: 4 + Math.random() * 5, delay: Math.random() * 5,
-    emoji: PARTICLES[kind][Math.floor(Math.random() * PARTICLES[kind].length)],
+    emoji: choices[Math.floor(Math.random() * choices.length)] ?? "✨",
   })));
   return <div className="pointer-events-none fixed inset-0 z-[9996] overflow-hidden">
     <style>{"@keyframes trl-fall{from{transform:translateY(-12vh) rotate(0)}to{transform:translateY(112vh) rotate(720deg)}}"}</style>
