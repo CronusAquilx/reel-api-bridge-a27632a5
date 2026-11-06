@@ -6,17 +6,18 @@ import { upgradeWallpaperSource } from "./wallpaper-catalog";
 import { WALLPAPER_LIVE_SOURCES } from "./wallpaper-live-sources";
 
 describe("completed native wallpaper imports", () => {
-  it("connects all 985 available originals without discarding the two unavailable previews", () => {
+  it("connects all 987 wallpapers to portable original media links", () => {
     expect(DESKTOPHUT_WALLPAPERS).toHaveLength(987);
     expect(Object.keys(WALLPAPER_ORIGINALS)).toHaveLength(985);
-    expect(DESKTOPHUT_WALLPAPERS.filter(item => item.originalQuality)).toHaveLength(985);
-    expect(DESKTOPHUT_WALLPAPERS.find(item => item.id === "dh-nier-automata-2b-winter-night-mkwf")?.originalQuality).toBe(false);
+    expect(Object.keys(WALLPAPER_LIVE_SOURCES)).toHaveLength(987);
+    expect(DESKTOPHUT_WALLPAPERS.filter(item => item.originalQuality)).toHaveLength(987);
+    expect(DESKTOPHUT_WALLPAPERS.every(item => item.image.startsWith("https://www.desktophut.com/") && item.video.startsWith("https://media.desktophut.com/"))).toBe(true);
   });
-  it("uses native dimensions and original posters for expanded catalog entries", () => {
+  it("uses native dimensions and working original posters for expanded catalog entries", () => {
     const item = DESKTOPHUT_WALLPAPERS.find(item => item.id === "dh-yelan-4k-live-wallpaper");
     expect(item?.resolution).toBe("3840x2160");
-    expect(item?.video).toBe(WALLPAPER_ORIGINALS["dh-yelan-4k-live-wallpaper"]?.video);
-    expect(item?.image).toBe(WALLPAPER_ORIGINALS["dh-yelan-4k-live-wallpaper"]?.image);
+    expect(item?.video).toBe(WALLPAPER_LIVE_SOURCES["dh-yelan-4k-live-wallpaper"]?.video);
+    expect(item?.image).toBe(WALLPAPER_LIVE_SOURCES["dh-yelan-4k-live-wallpaper"]?.image);
   });
   it("upgrades saved previews from both collections without changing custom uploads", () => {
     for (const item of manifest) {

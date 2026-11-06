@@ -12,7 +12,8 @@ export function WallpaperMedia({ src, type, poster, className, reduceMotion = fa
   const prefs = usePrefs();
   const video = useRef<HTMLVideoElement>(null);
   const playbackChoice = playback ?? (poster ? true : undefined);
-  const mediaSrc = type === "video" ? upgradeWallpaperSource(src, WALLPAPER_VIDEO_UPGRADES) : src;
+  const mediaSrc = type === "video" ? upgradeWallpaperSource(src, WALLPAPER_VIDEO_UPGRADES) : repairWallpaperUrl(src, "image") ?? src;
+  const posterSrc = repairWallpaperUrl(poster, "image");
   useEffect(() => {
     const node = video.current;
     if (!node) return;
