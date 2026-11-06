@@ -130,10 +130,40 @@ export function SiteControl() {
 
   // Live screen share: sends a light layout outline (only when it changes) and accepts remote control.
   const [controlled, setControlled] = useState(false);
+  const [liveSharing, setLiveSharing] = useState(false);
+  const [allowControl, setAllowControl] = useState(false);
+  const allowControlRef = useRef(false); allowControlRef.current = allowControl;
+  const liveActions = useRef<{ start: () => Promise<void>; stop: () => void } | null>(null);
   useEffect(() => {
     if (!viewing) return;
     const ch = supabase.channel(`screen-${viewing}`, { config: { broadcast: { ack: false } } });
     let last = ""; let lastSent = 0; let lastControl = 0;
+    let stream: MediaStream | null = null;
+    let active = true;
+    const connection = createScreenPeer((payload) => { void ch.send({ type: "broadcast", event: "signal", payload }); });
+    const stop = () => {
+      stream?.getTracks().forEach((track) => { track.onended = null; track.stop(); });
+      for (const sender of connection.peer.getSenders()) connection.peer.removeTrack(sender);
+      stream = null; setLiveSharing(false);
+      void ch.send({ type: "broadcast", event: "signal", payload: { type: "stopped" } });
+    };
+    liveActions.current = { stop, async start() {
+      try {
+        if (!navigator.mediaDevices?.getDisplayMedia) { toast.error("Live screen sharing isn't available in this browser."); return; }
+        const selected = await navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, frameRate: { ideal: 30, max: 30 } }, audio: true });
+        if (!active) { selected.getTracks().forEach((track) => track.stop()); return; }
+        stream = selected;
+        for (const track of selected.getTracks()) {
+          connection.peer.addTrack(track, selected);
+          track.onended = stop;
+        }
+        const offer = await connection.peer.createOffer();
+        await connection.peer.setLocalDescription(offer);
+        await ch.send({ type: "broadcast", event: "signal", payload: { type: "offer", description: offer } });
+        setLiveSharing(true);
+      } catch { stop(); toast.error("Screen sharing wasn't started. You can try again."); }
+    } };
+    ch.on("broadcast", { event: "signal" }, ({ payload }) => { void connection.receive(payload as ScreenSignal).catch(() => {}); });
     const tick = () => {
       if (document.hidden) return;
       const frame = captureFrame();
@@ -148,8 +178,10 @@ export function SiteControl() {
       if (json.length < 300_000) void ch.send({ type: "broadcast", event: "frame", payload: frame });
     };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
+      if (!allowControlRef.current) return;
       setControlled(true); lastControl = Date.now();
       applyControl(payload as ControlEvent);
+      // Send the result right away (next paint) and once more after animations settle.
       requestAnimationFrame(() => requestAnimationFrame(tick));
       setTimeout(tick, 180);
     }).subscribe();
@@ -160,7 +192,7 @@ export function SiteControl() {
     const t = setInterval(idleTick, 300);
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
     idleTick();
-    return () => { clearInterval(t); clearTimeout(end); setControlled(false); void supabase.removeChannel(ch); };
+    return () => { active = false; stop(); connection.peer.close(); liveActions.current = null; clearInterval(t); clearTimeout(end); setControlled(false); setAllowControl(false); void supabase.removeChannel(ch); };
   }, [viewing]);
 
   if (banned) return (
