@@ -1,5 +1,9 @@
 # Birchbeat import roadmap
 
+## Current request — visible Music playback controls
+- [x] Reproduce song playback in a maximized Music window and identify the hidden shared player bar.
+- [ ] Keep playback and queue controls visible in maximized windows and verify song progress through the real interface.
+
 ## Current request — audible music playback
 - [x] Restore the shared player with key-free YouTube song discovery while preserving playlists, library and layout controls.
 - [x] Retain Apple audio previews and relay them through the music service as a fallback when full video playback is unavailable.
