@@ -31,6 +31,6 @@ export function WallpaperMedia({ src, type, poster, className, reduceMotion = fa
     return () => { node.pause(); node.removeEventListener("loadeddata", update); node.removeEventListener("canplay", update); document.removeEventListener("visibilitychange", update); motion.removeEventListener("change", update); };
   }, [mediaSrc, type, reduceMotion, prefs.perfMode, playbackChoice]);
   return type === "video"
-    ? <video ref={video} key={mediaSrc} src={mediaSrc} poster={poster} muted loop playsInline preload="auto" aria-hidden="true" className={className} data-wallpaper-video="true"/>
+    ? <video ref={video} key={mediaSrc} src={mediaSrc} poster={posterSrc} muted loop playsInline preload="auto" aria-hidden="true" className={className} data-wallpaper-video="true"/>
     : <img src={src} alt="" width={1920} height={1080} className={className}/>;
 }

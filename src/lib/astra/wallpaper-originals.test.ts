@@ -23,7 +23,7 @@ describe("completed native wallpaper imports", () => {
     for (const item of manifest) {
       const original = WALLPAPER_ORIGINALS[item.id];
       if (!original) continue;
-      expect(upgradeWallpaperSource(item.video, WALLPAPER_VIDEO_UPGRADES)).toBe(original.video);
+      expect(upgradeWallpaperSource(item.video, WALLPAPER_VIDEO_UPGRADES)).toBe(WALLPAPER_LIVE_SOURCES[item.id]?.video);
     }
     expect(upgradeWallpaperSource("blob:my-custom-wallpaper", WALLPAPER_VIDEO_UPGRADES)).toBe("blob:my-custom-wallpaper");
   });
