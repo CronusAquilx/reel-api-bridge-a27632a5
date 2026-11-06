@@ -147,7 +147,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   const fresh = Boolean(frame && now - lastFrame < 25_000);
 
   return createPortal(<div className="pointer-events-none fixed inset-0 z-[10020]">
-    <section ref={wrapRef} role="dialog" aria-modal="false" aria-label={`Screen viewer for ${visitor.name}`} className={`pointer-events-auto absolute flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-2xl ${full ? "inset-0 h-dvh w-full rounded-none" : "bottom-4 right-4 h-[min(680px,calc(100dvh-2rem))] w-[min(880px,calc(100vw-2rem))] resize-none rounded-xl sm:resize"}`}>
+    <section ref={wrapRef} role="dialog" aria-modal="false" aria-label={`Screen viewer for ${visitor.name}`} className={`pointer-events-auto absolute flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-2xl ${full ? "inset-0 h-dvh w-full rounded-none" : "bottom-4 right-4 h-[min(560px,calc(100dvh-5rem))] w-[min(760px,calc(100vw-2rem))] resize-none rounded-xl sm:resize"}`}>
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`size-2.5 shrink-0 rounded-full ${fresh ? "bg-primary" : "bg-muted-foreground"}`} />
