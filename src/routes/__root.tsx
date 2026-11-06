@@ -114,7 +114,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <VisitProvider>
-          <VisitGate><Outlet /></VisitGate>
+          <div id="site-content"><VisitGate><Outlet /></VisitGate></div>
         </VisitProvider>
         <SiteControl />
         <Toaster />
