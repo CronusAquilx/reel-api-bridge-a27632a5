@@ -180,10 +180,7 @@ export function TrollLayer({ troll, onEnd }: { troll: string; onEnd: () => void 
     window.addEventListener("keydown", escape);
     return () => { clearTimeout(t); window.removeEventListener("keydown", escape); };
   }, [troll]);
-  return <>
-    <ActiveTroll troll={troll} />
-    <div data-screen-share="skip" className="fixed right-3 top-3 z-[10001]"><Button variant="secondary" onClick={onEnd}>Stop effect · Esc</Button></div>
-  </>;
+  return <ActiveTroll troll={troll} />;
 }
 
 function ActiveTroll({ troll }: { troll: string }) {
