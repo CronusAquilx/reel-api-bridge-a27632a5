@@ -1,5 +1,12 @@
 # Birchbeat import roadmap
 
+## Current request — effects, screen viewing and wallpaper portability
+- [x] Isolate effects from html/body, add eight bounded visual effects and independent Stop/Escape controls; browser-overload/crashing excluded. Focused isolation/recovery browser check passes; the reported target-device grey screen still needs paired reproduction.
+- [x] Implement height/width-fitted viewer, wrapping toolbar, freshness status, consent-based WebRTC media sharing, revocable target control and preview payload fallback.
+- [x] Count wallpaper ownership: 523 pointers belong to this project, 4,987 still belong to the old project (5,510 files total); no transfer process is running in this workspace. Git preserves CDN pointers, not offline media; clone limitations documented.
+- [x] Four focused geometry/effect tests pass; effect isolation and Stop control checked in browser; compilation clean.
+- [ ] Verify authenticated two-person live video/control, target-device grey-screen reproduction and narrow/fullscreen viewer appearance — automatic requesting-user session mint failed; needs preview sign-in and a second consenting browser tab. DRM and restrictive-network sharing remain unsupported limitations, not claimed fixed.
+
 ## Current request — wallpaper transfer and independent accounts
 - [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
 - [ ] Remember every added account and keep different browser tabs signed in independently.

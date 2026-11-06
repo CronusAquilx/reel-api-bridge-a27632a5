@@ -7,6 +7,8 @@ import { useAuth, signOutAll } from "@/lib/auth";
 import { applyControl, captureFrame, type ControlEvent } from "@/lib/astra/screen-share";
 import { visitorCommands } from "@/lib/astra/visitor-commands.functions";
 import { TrollLayer } from "./TrollLayer";
+import { Button } from "@/components/ui/button";
+import { createScreenPeer, type ScreenSignal } from "@/lib/astra/live-screen";
 
 export type LiveVisitor = { key: string; deviceId: string; userId: string | null; name: string; path: string; since: string; owner: boolean; idle?: boolean };
 export const OWNER_EMAIL = "qaisdev@gmail.org";
@@ -128,19 +130,55 @@ export function SiteControl() {
 
   // Live screen share: sends a light layout outline (only when it changes) and accepts remote control.
   const [controlled, setControlled] = useState(false);
+  const [liveSharing, setLiveSharing] = useState(false);
+  const [allowControl, setAllowControl] = useState(false);
+  const allowControlRef = useRef(false); allowControlRef.current = allowControl;
+  const liveActions = useRef<{ start: () => Promise<void>; stop: () => void } | null>(null);
   useEffect(() => {
     if (!viewing) return;
     const ch = supabase.channel(`screen-${viewing}`, { config: { broadcast: { ack: false } } });
     let last = ""; let lastSent = 0; let lastControl = 0;
+    let stream: MediaStream | null = null;
+    let active = true;
+    const connection = createScreenPeer((payload) => { void ch.send({ type: "broadcast", event: "signal", payload }); });
+    const stop = () => {
+      stream?.getTracks().forEach((track) => { track.onended = null; track.stop(); });
+      for (const sender of connection.peer.getSenders()) connection.peer.removeTrack(sender);
+      stream = null; setLiveSharing(false);
+      void ch.send({ type: "broadcast", event: "signal", payload: { type: "stopped" } });
+    };
+    liveActions.current = { stop, async start() {
+      try {
+        if (!navigator.mediaDevices?.getDisplayMedia) { toast.error("Live screen sharing isn't available in this browser."); return; }
+        const selected = await navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, frameRate: { ideal: 30, max: 30 } }, audio: true });
+        if (!active) { selected.getTracks().forEach((track) => track.stop()); return; }
+        stream = selected;
+        for (const track of selected.getTracks()) {
+          connection.peer.addTrack(track, selected);
+          track.onended = stop;
+        }
+        const offer = await connection.peer.createOffer();
+        await connection.peer.setLocalDescription(offer);
+        await ch.send({ type: "broadcast", event: "signal", payload: { type: "offer", description: offer } });
+        setLiveSharing(true);
+      } catch { stop(); toast.error("Screen sharing wasn't started. You can try again."); }
+    } };
+    ch.on("broadcast", { event: "signal" }, ({ payload }) => { void connection.receive(payload as ScreenSignal).catch(() => {}); });
     const tick = () => {
       if (document.hidden) return;
       const frame = captureFrame();
-      const json = JSON.stringify(frame);
+      let json = JSON.stringify(frame);
+      // Keep the preview moving even when a busy canvas exceeds broadcast limits.
+      if (json.length >= 280_000) {
+        for (const item of frame.items) if (item.media) delete item.img;
+        json = JSON.stringify(frame);
+      }
       if (json === last && Date.now() - lastSent < 10000) return; // nothing changed
       last = json; lastSent = Date.now();
       if (json.length < 300_000) void ch.send({ type: "broadcast", event: "frame", payload: frame });
     };
     ch.on("broadcast", { event: "control" }, ({ payload }) => {
+      if (!allowControlRef.current) return;
       setControlled(true); lastControl = Date.now();
       applyControl(payload as ControlEvent);
       // Send the result right away (next paint) and once more after animations settle.
@@ -154,7 +192,7 @@ export function SiteControl() {
     const t = setInterval(idleTick, 300);
     const end = setTimeout(() => setViewing(null), 15 * 60 * 1000);
     idleTick();
-    return () => { clearInterval(t); clearTimeout(end); setControlled(false); void supabase.removeChannel(ch); };
+    return () => { active = false; stop(); connection.peer.close(); liveActions.current = null; clearInterval(t); clearTimeout(end); setControlled(false); setAllowControl(false); void supabase.removeChannel(ch); };
   }, [viewing]);
 
   if (banned) return (
@@ -167,7 +205,12 @@ export function SiteControl() {
   );
   return <>
     {troll && !owner && <TrollLayer key={troll} troll={troll} onEnd={() => setTroll(null)} />}
-    {viewing && <div data-screen-share="skip" className="fixed bottom-2 left-2 z-[9998] rounded-full bg-destructive px-3 py-1 text-xs text-destructive-foreground">{controlled ? "Staff is controlling your screen" : "Staff is viewing your screen"}</div>}
+    {viewing && <div data-screen-share="skip" className="fixed bottom-2 left-2 right-2 z-[10002] flex flex-wrap items-center gap-2 rounded-md border border-border bg-background p-2 text-xs text-foreground shadow-lg sm:right-auto">
+      <span>{liveSharing ? "Live screen sharing" : controlled && allowControl ? "Staff is controlling your screen" : "Staff is viewing your screen"}</span>
+      <Button size="sm" variant="secondary" onClick={() => { if (liveSharing) liveActions.current?.stop(); else void liveActions.current?.start(); }}>{liveSharing ? "Stop live video" : "Share live video"}</Button>
+      <Button size="sm" variant="secondary" onClick={() => setAllowControl((value) => !value)}>{allowControl ? "Revoke control" : "Allow control"}</Button>
+      <Button size="sm" variant="outline" onClick={() => setViewing(null)}>Stop viewing</Button>
+    </div>}
     {announce && (
       <div className="fixed inset-x-0 top-0 z-[9997] flex items-center justify-center gap-3 bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg" role="status">
         <span>📢 {announce}</span>

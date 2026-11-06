@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ControlEvent, ScreenFrame } from "@/lib/astra/screen-share";
+import { createScreenPeer, type ScreenSignal } from "@/lib/astra/live-screen";
+import { fitScreen, screenPoint } from "@/lib/astra/screen-geometry";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Pause, Play, LogOut, Send, Ban, Eye, X, UserPlus, MousePointer2, Maximize, Minimize, Megaphone, RotateCw, Navigation, Search, Shield, Trash2 } from "lucide-react";
@@ -55,66 +57,85 @@ async function banDevice(v: LiveVisitor): Promise<void> {
 function ScreenViewer({ visitor, canControl, onClose }: { visitor: LiveVisitor; canControl: boolean; onClose: () => void }) {
   const [frame, setFrame] = useState<ScreenFrame | null>(null);
   const [control, setControl] = useState(false);
-  const [box, setBox] = useState(0);
-  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
-  const chRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const [size, setSize] = useState({ w: 800, h: 600 });
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [lastFrame, setLastFrame] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [full, setFull] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const channel = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [full, setFull] = useState(false);
-  useEffect(() => { const f = () => setFull(document.fullscreenElement === wrapRef.current); document.addEventListener("fullscreenchange", f); return () => document.removeEventListener("fullscreenchange", f); }, []);
-  const toggleFull = () => { if (document.fullscreenElement) void document.exitFullscreen(); else void wrapRef.current?.requestFullscreen?.(); };
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (videoRef.current) { videoRef.current.srcObject = stream; void videoRef.current.play().catch(() => {}); }
+  }, [stream]);
+  useEffect(() => {
+    const el = areaRef.current; if (!el) return;
+    const observer = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
+    observer.observe(el);
+    const fullscreen = () => setFull(document.fullscreenElement === wrapRef.current);
+    document.addEventListener("fullscreenchange", fullscreen);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => { observer.disconnect(); clearInterval(timer); document.removeEventListener("fullscreenchange", fullscreen); };
+  }, []);
   useEffect(() => {
     const id = crypto.randomUUID();
-    const to = target(visitor);
-    const ch = supabase.channel(`screen-${id}`, { config: { broadcast: { ack: false } } }).on("broadcast", { event: "frame" }, ({ payload }) => setFrame(payload as ScreenFrame));
-    ch.subscribe((s) => { if (s === "SUBSCRIBED") void send("view", to, id, true); });
-    chRef.current = ch;
-    return () => { chRef.current = null; void send("unview", to, undefined, true); void supabase.removeChannel(ch); };
+    const ch = supabase.channel(`screen-${id}`, { config: { broadcast: { ack: false } } });
+    const connection = createScreenPeer((payload) => { void ch.send({ type: "broadcast", event: "signal", payload }); });
+    connection.peer.ontrack = ({ streams }) => { if (streams[0]) setStream(streams[0]); };
+    connection.peer.onconnectionstatechange = () => {
+      if (["failed", "disconnected", "closed"].includes(connection.peer.connectionState)) setStream(null);
+    };
+    ch.on("broadcast", { event: "frame" }, ({ payload }) => { setFrame(payload as ScreenFrame); setLastFrame(Date.now()); })
+      .on("broadcast", { event: "signal" }, ({ payload }) => {
+        const signal = payload as ScreenSignal;
+        if (signal.type === "stopped") setStream(null);
+        else void connection.receive(signal).catch(() => {});
+      }).subscribe((status) => {
+        setConnected(status === "SUBSCRIBED");
+        if (status === "SUBSCRIBED") void send("view", target(visitor), id, true);
+      });
+    channel.current = ch;
+    return () => { channel.current = null; connection.peer.close(); void send("unview", target(visitor), undefined, true); void supabase.removeChannel(ch); };
   }, [visitor.userId, visitor.deviceId]);
-  useEffect(() => {
-    const el = boxRef.current; if (!el) return;
-    const ro = new ResizeObserver(() => setBox(el.clientWidth)); ro.observe(el); return () => ro.disconnect();
-  }, [frame !== null]);
-  const ctl = (payload: ControlEvent) => { if (control) void chRef.current?.send({ type: "broadcast", event: "control", payload }); };
-  const scale = frame && box ? (full ? Math.min(window.innerWidth / frame.w, (window.innerHeight - 90) / frame.h) : box / frame.w) : 1;
-  const point = (e: React.MouseEvent) => { const r = boxRef.current!.getBoundingClientRect(); return { x: Math.round((e.clientX - r.left) / scale), y: Math.round((e.clientY - r.top) / scale) }; };
-  const click = (e: React.MouseEvent) => {
-    if (!control) return;
-    const p = point(e); ctl({ type: "click", ...p });
-    const id = Date.now(); setRipples((r) => [...r, { id, ...p }]); setTimeout(() => setRipples((r) => r.filter((x) => x.id !== id)), 500);
+  const toggleFull = () => {
+    const action = document.fullscreenElement ? document.exitFullscreen() : wrapRef.current?.requestFullscreen?.();
+    void action?.catch(() => toast.error("Full screen isn't available here."));
   };
-  return (
-    <div ref={wrapRef} className={`space-y-2 rounded-lg border border-border bg-background p-3 ${full ? "flex flex-col justify-center overflow-hidden" : ""}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-foreground">Watching {visitor.name}{frame ? ` — ${frame.path}` : ""}</p>
-        <div className="flex gap-1">
-          {canControl && <Button size="sm" variant={control ? "default" : "secondary"} onClick={() => { setControl((c) => !c); boxRef.current?.focus(); }}><MousePointer2 />{control ? "Controlling" : "Take control"}</Button>}
-          <Button size="sm" variant="secondary" onClick={toggleFull}>{full ? <Minimize /> : <Maximize />}{full ? "Exit full screen" : "Full screen"}</Button>
-          <Button size="sm" variant="ghost" onClick={onClose}><X />Stop</Button>
-        </div>
+  const scale = frame ? fitScreen(frame.w, frame.h, size.w, size.h) : 1;
+  const point = (e: React.MouseEvent) => {
+    const rect = boxRef.current?.getBoundingClientRect();
+    return rect ? screenPoint(e.clientX, e.clientY, rect.left, rect.top, scale) : { x: 0, y: 0 };
+  };
+  const ctl = (payload: ControlEvent) => { if (control) void channel.current?.send({ type: "broadcast", event: "control", payload }); };
+  return <div ref={wrapRef} className={`flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-background p-3 ${full ? "h-svh" : ""}`}>
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+      <div className="min-w-0"><p className="truncate text-sm font-semibold">{visitor.name}</p><p className="truncate text-xs text-muted-foreground">{stream ? "Live video" : lastFrame && now - lastFrame > 12000 ? "Screen update delayed" : connected ? "Layout preview" : "Connecting…"} · {frame?.path ?? visitor.path}</p></div>
+      <div className="flex flex-wrap gap-1">
+        {canControl && <Button size="sm" variant={control ? "default" : "secondary"} onClick={() => { setControl((value) => !value); boxRef.current?.focus(); }}><MousePointer2 />{control ? "Release control" : "Control"}</Button>}
+        {stream && <Button size="sm" variant="secondary" onClick={() => setMuted((value) => !value)}>{muted ? "Unmute" : "Mute"}</Button>}
+        <Button size="icon" variant="secondary" aria-label={full ? "Exit full screen" : "Full screen"} title={full ? "Exit full screen" : "Full screen"} onClick={toggleFull}>{full ? <Minimize /> : <Maximize />}</Button>
+        <Button size="icon" variant="ghost" aria-label="Stop viewing" title="Stop viewing" onClick={onClose}><X /></Button>
       </div>
-      {frame ? (
-        <div ref={boxRef} tabIndex={0} className={`relative ${full ? "mx-auto" : "w-full"} overflow-hidden rounded border border-border outline-none ${control ? "cursor-pointer ring-2 ring-primary" : ""}`}
-          style={{ height: frame.h * scale, width: full ? frame.w * scale : undefined, background: frame.bg }}
-          onClick={click}
-          onDoubleClick={() => { if (!control) toggleFull(); }}
-          onWheel={(e) => ctl({ type: "scroll", ...point(e), dy: Math.round(e.deltaY) })}
-          onKeyDown={(e) => { if (!control) return; e.preventDefault(); if (e.key.length === 1) ctl({ type: "type", text: e.key }); else ctl({ type: "key", key: e.key }); }}>
-          <div style={{ width: frame.w, height: frame.h, transform: `scale(${scale})`, transformOrigin: "0 0", position: "absolute", pointerEvents: "none" }}>
-            {frame.items.map((it, i) => it.img
-              ? <img key={i} src={it.img} alt="" style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, objectFit: it.media || it.icon ? "contain" : "cover", background: it.media ? "#000" : it.bg, borderRadius: it.r }} />
-              : <div key={i} style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, background: it.media ? "#111" : it.bg, border: it.bd ? `1px solid ${it.bd}` : undefined, borderRadius: it.r, color: it.c, fontSize: it.fs, fontWeight: it.fw, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", lineHeight: 1.2, display: "flex", alignItems: "center", justifyContent: it.media ? "center" : undefined }}>{it.media ? "▶ protected video / game" : it.t}</div>)}
-            {ripples.map((r) => <span key={r.id} className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-primary/60" style={{ left: r.x, top: r.y }} />)}
-          </div>
-          <button type="button" aria-label={full ? "Exit full screen" : "Full screen"} onClick={(e) => { e.stopPropagation(); toggleFull(); }}
-            className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-md bg-background/80 text-foreground shadow backdrop-blur hover:bg-background">
-            {full ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          </button>
-        </div>
-      ) : <p className="py-10 text-center text-sm text-muted-foreground">Waiting for their screen…</p>}
-      <p className="text-xs text-muted-foreground">{control ? "Click to click for them, scroll to scroll, and type while the screen is selected." : "Updates live, including icons. Videos and games show as live pictures; a few protected ones stay dark."}</p>
     </div>
-  );
+    <div ref={areaRef} className={`grid min-h-0 min-w-0 place-items-center overflow-hidden bg-muted ${full ? "flex-1" : "h-[55svh]"}`}>
+      {frame ? <div ref={boxRef} tabIndex={0} className={`relative overflow-hidden outline-none ${control ? "cursor-crosshair ring-2 ring-primary" : ""}`} style={{ width: frame.w * scale, height: frame.h * scale, background: frame.bg }}
+        onClick={(e) => ctl({ type: "click", ...point(e) })}
+        onWheel={(e) => { if (control) { e.stopPropagation(); ctl({ type: "scroll", ...point(e), dy: Math.round(e.deltaY) }); } }}
+        onKeyDown={(e) => { if (!control) return; e.preventDefault(); if (e.key.length === 1) ctl({ type: "type", text: e.key }); else ctl({ type: "key", key: e.key }); }}>
+        {stream ? <video ref={videoRef} autoPlay playsInline muted={muted} className="pointer-events-none h-full w-full object-contain" /> : <div className="pointer-events-none absolute origin-top-left" style={{ width: frame.w, height: frame.h, transform: `scale(${scale})` }}>
+          {frame.items.map((it, i) => it.img
+            ? <img key={i} src={it.img} alt="" style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, objectFit: it.media || it.icon ? "contain" : "cover", background: it.bg, borderRadius: it.r }} />
+            : <div key={i} style={{ position: "absolute", left: it.x, top: it.y, width: it.w, height: it.h, background: it.bg, border: it.bd ? `1px solid ${it.bd}` : undefined, borderRadius: it.r, color: it.c, fontSize: it.fs, fontWeight: it.fw, overflow: "hidden", whiteSpace: "nowrap", lineHeight: 1.2 }}>{it.media ? "Live sharing needed" : it.t}</div>)}
+        </div>}
+      </div> : <p className="text-sm text-muted-foreground">{connected ? "Waiting for their screen…" : "Connecting to screen…"}</p>}
+    </div>
+    {!stream && <p className="text-xs text-muted-foreground">Live video: waiting for {visitor.name} to approve sharing. Protected movies may remain black.</p>}
+    {control && <p className="text-xs text-muted-foreground">Control requires their approval. Game and movie controls may reject remote input.</p>}
+  </div>;
 }
 
 function Bans() {

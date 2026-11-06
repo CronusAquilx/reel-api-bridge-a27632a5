@@ -114,7 +114,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <VisitProvider>
-          <VisitGate><Outlet /></VisitGate>
+          <div id="birch-app-surface" className="min-h-svh"><VisitGate><Outlet /></VisitGate></div>
         </VisitProvider>
         <SiteControl />
         <Toaster />
