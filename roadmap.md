@@ -1,5 +1,11 @@
 # Birchbeat import roadmap
 
+## Current request — smooth docked viewing and complete wallpapers
+- [ ] Reduce target-side screen-capture work with adaptive idle-time snapshots while retaining clear pictures.
+- [ ] Keep the live viewer docked inside Developer games so staff can use other controls while watching.
+- [ ] Repair empty Personalize wallpaper entries and retain every catalog asset as GitHub-portable source links.
+- [ ] Run focused regression checks and a staff/guest viewing flow.
+
 ## Current request — reliable screen viewing and portable wallpapers
 - [x] Scope troll effects to the viewport-sized app surface and normalize guest command cursors so consecutive effects cannot stick or collapse the desktop.
 - [x] Rebuild the staff viewer as a true full-screen portal with live screenshots, scaling, connection state, refresh and scoped controls.
