@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, UserRound, ArrowLeft, LogIn } from "lucide-react";
+import { Plus, UserRound, ArrowLeft, LogIn, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { usePrefs, activatePreferenceAccount, getPrefsSnapshot } from "@/lib/astra/prefs";
@@ -16,6 +16,7 @@ import { useVisit, visitDestination } from "@/lib/console/visit";
 import { ConsoleShell } from "@/components/console/ConsoleShell";
 import { useClock } from "@/lib/console/ctx";
 import { DevPanel } from "@/components/astra/DevPanel";
+import { activateSavedAccount, forgetSavedAccount, listSavedAccounts, subscribeToSavedAccounts, type SavedAccountInfo } from "@/lib/astra/tab-sessions";
 
 export function AuthPage() {
   const { session, user, enterGuest } = useAuth(); const { send } = useVisit(); const p = usePrefs();
@@ -23,9 +24,15 @@ export function AuthPage() {
   const [mode, setMode] = useState<"picker"|"in"|"up">("picker");
   const [username,setUsername]=useState(""); const [password,setPassword]=useState(""); const [email,setEmail]=useState("");
   const [busy,setBusy]=useState(false); const [message,setMessage]=useState(""); const [devOpen,setDevOpen]=useState(false);
+  const [savedAccounts,setSavedAccounts]=useState<SavedAccountInfo[]>([]);
   const login=useServerFn(usernameSignIn);const signup=useServerFn(usernameSignUp);const status=useServerFn(accountSetupStatus);
   const name=String(user?.user_metadata?.["name"]??user?.user_metadata?.["full_name"]??user?.email?.split("@")[0]??"Player");
   const skin=p.console==="sony"?"PlayStation / PS5":p.console==="series"?"Xbox Series X":p.console==="wii"?"Wii":p.console==="neutral"?"Neutral":p.layout==="switch"?"Switch":p.layout==="macos"?"macOS":p.layout==="ipad"?"iPad":"Windows";
+  useEffect(()=>{
+    const refresh=()=>setSavedAccounts(listSavedAccounts());
+    refresh();
+    return subscribeToSavedAccounts(refresh);
+  },[]);
   useEffect(()=>{
     const onKey=(e:KeyboardEvent)=>{
       const t=e.target as HTMLElement|null;
@@ -51,11 +58,20 @@ export function AuthPage() {
       await enter();
     }catch(err){setMessage(err instanceof Error?err.message:"Couldn't sign in.");}finally{setBusy(false);}
   }
+  async function switchAccount(id:string) {
+    setBusy(true);setMessage("");
+    try {
+      await queryClient.cancelQueries();queryClient.clear();
+      const result=await activateSavedAccount(id);if(result.error)throw result.error;
+      await enter();
+    } catch(err) { setMessage(err instanceof Error?err.message:"Couldn't switch accounts."); }
+    finally { setBusy(false); }
+  }
   async function guest() {
     setBusy(true);
     try{
       await queryClient.cancelQueries();queryClient.clear();
-      const result=await supabase.auth.signOut();if(result.error)throw result.error;
+      const result=await supabase.auth.signOut({scope:"local"});if(result.error)throw result.error;
       enterGuest();send("account-confirmed");await navigate({to:visitDestination(p),replace:true});
     }
     catch(err){setMessage(err instanceof Error?err.message:"Couldn't continue as guest.");}finally{setBusy(false);}

@@ -15,7 +15,7 @@ export type SavedAccountInfo = Pick<SavedAccount, "id" | "name" | "updatedAt">;
 
 function accountName(session: Session) {
   const metadata = session.user.user_metadata ?? {};
-  return String(metadata.name || metadata.username || metadata.full_name || session.user.email?.split("@")[0] || "Account");
+  return String(metadata["name"] || metadata["username"] || metadata["full_name"] || session.user.email?.split("@")[0] || "Account");
 }
 
 function readAccounts(): SavedAccount[] {

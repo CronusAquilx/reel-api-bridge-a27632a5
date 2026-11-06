@@ -46,5 +46,5 @@ export const useAuth = () => useContext(AuthContext);
 export async function signOutAll() {
   await flushPreferences().catch(() => {});
   writeGuest(false); window.dispatchEvent(new Event(GUEST_KEY));
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
 }
