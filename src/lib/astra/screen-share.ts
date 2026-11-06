@@ -131,6 +131,13 @@ export function nextCaptureDelay(captureMs: number): number {
   return Math.min(8000, Math.max(2200, Math.round(captureMs * 12)));
 }
 
+/** Cheap updates for animated media; the viewer keeps the last full picture underneath. */
+export function captureMediaFrame(): ScreenFrame {
+  const w = window.innerWidth, h = window.innerHeight;
+  const base = { w, h, path: location.pathname, bg: getComputedStyle(document.body).backgroundColor };
+  return { ...base, items: captureMediaItems(base), mediaOnly: true };
+}
+
 /** Capture actual rendered pixels first; only pay for the full DOM outline when pixels are unavailable. */
 export async function captureLiveFrame(): Promise<ScreenFrame> {
   const w = window.innerWidth, h = window.innerHeight;
