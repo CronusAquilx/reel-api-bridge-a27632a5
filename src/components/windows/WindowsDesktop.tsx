@@ -48,6 +48,7 @@ export function WindowsDesktop({ children, desktopOnly = false }: { children?: R
   }, []);
   const launcher = useLauncherApps();
   const open = (app: DesktopApp, windowId?: string) => {
+    if (app === "music") { setStart(false); setTasks(false); setAddTab(null); setQuery(""); void navigate({ to: "/music" }); return; }
     const tab = tabFor(app);
     if (windowId) dispatch({ type: "tab", id: windowId, tab });
     else dispatch({ type: "open", window: makeWindow(uid(), tab, state.windows.length) });

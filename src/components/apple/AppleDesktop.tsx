@@ -72,6 +72,7 @@ export function AppleDesktop({ variant, children }: { variant: Variant; children
   const launcher = useLauncherApps();
   const open = (app: DesktopApp, intoWindow?: string, fresh = false) => {
     setPanel(null); setAddTo(null); setQuery("");
+    if (app === "music") { void navigate({ to: "/music" }); return; }
     if (intoWindow) { dispatch({ type: "tab", id: intoWindow, tab: tabFor(app) }); return; }
     const running = !fresh && state.windows.find(w => w.tabs.some(t => t.app === app));
     if (running) { const tab = running.tabs.find(t => t.app === app)!; dispatch({ type: "patch", id: running.id, patch: { activeTab: tab.id } }); dispatch({ type: "focus", id: running.id }); return; }
