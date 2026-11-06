@@ -145,6 +145,7 @@ export function SiteControl() {
     let live = true;
     let busy = false;
     let dirty = true;
+    let forceBase = true;
     let last = "";
     let lastSent = 0;
     let lastBase = 0;
