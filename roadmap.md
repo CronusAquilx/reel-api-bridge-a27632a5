@@ -1,5 +1,10 @@
 # Birchbeat import roadmap
 
+## Current request — recipient safeguards and wallpaper audit
+- [x] Retain visible viewing notices, recipient-approved control, browser-approved live sharing and independent effect dismissal; covert viewing/control excluded.
+- [x] Recount source pointers: 523 current-project assets, 4,987 old-project references; no active transfer and no wallpaper image/video binaries in the repository. Git sync status cannot be verified here.
+- [x] Restore incomplete screen-sharing edits; latest compilation is clean and four focused effect/geometry tests pass.
+
 ## Current request — effects, screen viewing and wallpaper portability
 - [x] Isolate effects from html/body, add eight bounded visual effects and independent Stop/Escape controls; browser-overload/crashing excluded. Focused isolation/recovery browser check passes; the reported target-device grey screen still needs paired reproduction.
 - [x] Implement height/width-fitted viewer, wrapping toolbar, freshness status, consent-based WebRTC media sharing, revocable target control and preview payload fallback.
