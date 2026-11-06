@@ -1,0 +1,118 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793426190783,
+      "tag": "0000_astra_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793472207165,
+      "tag": "0001_console_social",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793472330808,
+      "tag": "0002_social_privacy_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793472454305,
+      "tag": "0003_social_nonrecursive_membership",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793486795649,
+      "tag": "0004_developer_game_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793501491297,
+      "tag": "0005_username_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793503240470,
+      "tag": "0006_apply_imported_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793562391887,
+      "tag": "0007_drop_stale_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793562426957,
+      "tag": "0008_restore_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793580320207,
+      "tag": "0009_account_personalization",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793846910213,
+      "tag": "0010_probe",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793902299843,
+      "tag": "0011_site_commands",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793906773051,
+      "tag": "0012_dev_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793906794685,
+      "tag": "0013_site_command_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793910659955,
+      "tag": "0014_staff_roles_and_visitor_commands",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793921337052,
+      "tag": "0015_troll_commands",
+      "breakpoints": true
+    }
+  ]
+}
