@@ -1,5 +1,13 @@
 # Birchbeat import roadmap
 
+## Current request — reliable screen viewing and portable wallpapers
+- [ ] Reproduce and fix troll effects leaving the target with a grey or unreadable screen.
+- [ ] Rebuild the staff screen viewer with clearer layout, working controls, connection state and useful scaling.
+- [ ] Add named/anonymous viewing and an optional target viewing notice without a schema change.
+- [ ] Add a larger set of reversible visual trolls directly to the active screen viewer.
+- [ ] Confirm all wallpaper catalog references are present and keep CDN pointer files portable through GitHub clones.
+- [ ] Run focused screen/troll/catalog checks; broad account and device testing remains user-owned.
+
 ## Current request — wallpaper transfer and independent accounts
 - [ ] Re-host the catalog's full-quality wallpaper assets in this project and repair transferred preference URLs.
 - [ ] Remember every added account and keep different browser tabs signed in independently.
