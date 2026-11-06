@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { authenticateRequest } from "@/lib/astra/api-user.server";
 import { playableVideoIds, QAISIFY_ROWS, qaisifyTrack } from "@/lib/music/qaisify";
 import { catalogSearch } from "@/lib/music/catalog";
+import { parseYoutubeSearch } from "@/lib/music/youtube-search";
 
 /** Music relay: Deezer catalog (songs, albums, artists), artwork, lyrics and YouTube lookups load through Astra's server. */
 const DZ = "https://api.deezer.com";
@@ -104,7 +105,7 @@ function matchScore(title: string, artist: string, dur: number, w: Want) {
 /** Finds a playable audio URL for a song on the chosen server, preferring the original recording. */
 async function resolveAudio(server: string, w: Want, preview: string): Promise<string | null> {
   const q = `${w.artist} ${w.title}`;
-  if (server === "deezer") return /^https:\/\/[a-z0-9-]+\.dzcdn\.net\//i.test(preview) ? preview : null;
+  if (server === "deezer" || server === "itunes") return PREVIEW_HOST.test(preview) ? preview : null;
   if (server === "saavn") {
     const saavn = (process.env["SAAVN_API"] ?? "https://saavn.sumit.co").replace(/\/+$/, "");
     const d: any = await fetch(`${saavn}/api/search/songs?query=${encodeURIComponent(q)}&limit=20`, { signal: AbortSignal.timeout(6000) }).then((x) => x.json()).catch(() => ({}));
@@ -198,7 +199,8 @@ async function pipedStream(vid: string): Promise<string | null> {
   return best?.url ?? null;
 }
 const PIPED_AUDIO_HOST = /^https:\/\/([a-z0-9-]+\.)*(googlevideo\.com|[a-z0-9-]*piped[a-z0-9.-]*|kavin\.rocks|adminforge\.de|private\.coffee|r4fo\.com)(:\d+)?\//i;
-const AUDIO_HOST = /^https:\/\/(([a-z0-9-]+\.)*(dzcdn\.net|sndcdn\.com|saavncdn\.com)\/|api\.audius\.co\/v1\/tracks\/)/i;
+const PREVIEW_HOST = /^https:\/\/([a-z0-9-]+\.)*(dzcdn\.net|itunes\.apple\.com)\//i;
+const AUDIO_HOST = /^https:\/\/(([a-z0-9-]+\.)*(dzcdn\.net|sndcdn\.com|saavncdn\.com|itunes\.apple\.com)\/|api\.audius\.co\/v1\/tracks\/)/i;
 const albumOf = (a: any) => ({ id: String(a.id), title: a.title ?? "", artist: a.artist?.name ?? "", art: a.cover_big ?? "", year: (a.release_date ?? "").slice(0, 4) });
 const artistOf = (a: any) => ({ id: String(a.id), name: a.name ?? "", art: a.picture_big ?? "", fans: a.nb_fan ?? 0 });
 const playlistOf = (p: any) => ({ id: String(p.id), title: p.title ?? "", art: p.picture_big ?? "", count: p.nb_tracks ?? 0, by: p.user?.name ?? "" });
@@ -371,7 +373,25 @@ async function handle({ request }: { request: Request }) {
       if (ids.length) youtubeCache.set(query, { at: Date.now(), ids });
       if (youtubeCache.size > 200) { const first = youtubeCache.keys().next().value; if (first) youtubeCache.delete(first); }
       return json({ ids }, 300);
-      } catch (e) { return json({ ids: [], error: e instanceof Error ? e.message : "YouTube unavailable" }, 0); }
+      } catch (e) {
+        // The official player does not require an API key. Public search keeps it usable
+        // when the optional YouTube Data connection is absent or out of quota.
+        try {
+          const response = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} official audio`)}`, { headers: UA, signal: AbortSignal.timeout(8000) });
+          if (!response.ok) throw new Error("YouTube search unavailable");
+          const html = await response.text();
+          const want: Want = { title: url.searchParams.get("title") ?? "", artist: url.searchParams.get("artist") ?? "", duration: Number(url.searchParams.get("duration") ?? 0) || 0 };
+          const found = parseYoutubeSearch(html);
+          const ranked = found.map((item, index) => ({ item, score: matchScore(item.title, item.channel, item.duration, want) + (/lyrics?|official (audio|video)/i.test(item.title) ? 2 : 0) - index * .15 }))
+            .sort((a, b) => b.score - a.score);
+          const ids = (ranked.filter(item => item.score >= 2).length ? ranked.filter(item => item.score >= 2) : ranked).slice(0, 5).map(item => item.item.id);
+          if (!ids.length) throw new Error("No matching YouTube videos");
+          youtubeCache.set(query, { at: Date.now(), ids });
+          return json({ ids }, 300);
+        } catch {
+          return json({ ids: [], error: e instanceof Error ? e.message : "YouTube unavailable" }, 0);
+        }
+      }
     }
   }
   return new Response("Unknown op", { status: 400 });

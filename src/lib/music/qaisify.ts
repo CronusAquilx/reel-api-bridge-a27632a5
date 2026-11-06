@@ -15,7 +15,7 @@ export const QAISIFY_ROWS = [
 export function qaisifyTrack(t: Record<string, any>) {
   return { id: `itunes:${t["trackId"]}`, title: t["trackName"] ?? "", artist: t["artistName"] ?? "", artistId: `itunes:${t["artistId"]}`,
     album: t["collectionName"] ?? "", albumId: `itunes:${t["collectionId"]}`, art: String(t["artworkUrl100"] ?? "").replace(/\d+x\d+bb/, "600x600bb"),
-    duration: Math.round(Number(t["trackTimeMillis"] ?? 0) / 1000), source: "itunes" as const };
+    duration: Math.round(Number(t["trackTimeMillis"] ?? 0) / 1000), preview: t["previewUrl"] ?? "", source: "itunes" as const };
 }
 
 export function playableVideoIds(ids: string[], videos: Record<string, any>[]) {
