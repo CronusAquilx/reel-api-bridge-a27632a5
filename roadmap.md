@@ -1,5 +1,10 @@
 # Birchbeat import roadmap
 
+## Current request — audible music playback
+- [ ] Trace the existing shared player and restore reliable song audio without replacing playlists, library or layout controls.
+- [ ] Provide working YouTube playback with a clear fallback when a video is unavailable or blocked.
+- [ ] Run focused playback checks and verify audible playback through the real Music interface.
+
 ## Current request — restore missing wallpaper images
 - [x] Replace dead project-scoped hosting links with original full-quality DesktopHut media URLs and repair previously saved selections without changing custom uploads.
 - [x] Keep all 987 entries portable for GitHub clones; pass 21 focused checks and verify all 1,974 media URLs plus Personalize thumbnails and 4K playback.
