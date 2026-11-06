@@ -140,7 +140,8 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   };
   const fresh = Boolean(frame && now - lastFrame < 12_000);
 
-  return createPortal(<div ref={wrapRef} role="dialog" aria-modal="true" aria-label={`Screen viewer for ${visitor.name}`} className="fixed inset-0 z-[10020] flex h-dvh flex-col bg-background text-foreground">
+  return createPortal(<div className="pointer-events-none fixed inset-0 z-[10020]">
+    <section ref={wrapRef} role="dialog" aria-modal="false" aria-label={`Screen viewer for ${visitor.name}`} className={`pointer-events-auto absolute flex flex-col overflow-hidden border border-border bg-background text-foreground shadow-2xl ${full ? "inset-0 h-dvh w-full rounded-none" : "bottom-4 right-4 h-[min(680px,calc(100dvh-2rem))] w-[min(880px,calc(100vw-2rem))] resize-none rounded-xl sm:resize"}`}>
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`size-2.5 shrink-0 rounded-full ${fresh ? "bg-primary" : "bg-muted-foreground"}`} />
@@ -167,7 +168,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
     </div>
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      <main ref={stageRef} className="relative min-h-[45vh] flex-1 overflow-hidden bg-muted/50 p-3 lg:min-h-0">
+      <main ref={stageRef} className="relative min-h-56 flex-1 overflow-hidden bg-muted/50 p-3 lg:min-h-0">
         {frame ? <div ref={boxRef} tabIndex={0} aria-label="Shared screen. Select to use remote keyboard control." className={`absolute left-1/2 top-1/2 overflow-hidden rounded-md border border-border bg-background shadow-2xl outline-none ${control ? "cursor-crosshair ring-2 ring-primary" : ""}`}
           style={{ width: frame.w * scale, height: frame.h * scale, transform: "translate(-50%, -50%)", background: frame.bg }}
           onClick={click}
@@ -193,5 +194,6 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
       <span>{control ? "Click their screen to click, scroll to scroll, and type while it is selected." : "Choose Take control only when you need to interact."}</span>
       <span className="shrink-0">{frame?.shot ? "Live picture" : "Layout fallback"} · {fresh ? "Live" : "Waiting"}</span>
     </footer>
+    </section>
   </div>, document.body);
 }
