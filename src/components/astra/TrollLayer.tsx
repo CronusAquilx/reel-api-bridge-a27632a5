@@ -123,7 +123,7 @@ const PARTICLES: Record<string, string[]> = {
   ducks: ["🦆", "🐤", "🪿"],
 };
 function Particles({ kind }: { kind: keyof typeof PARTICLES }) {
-  const choices = PARTICLES[kind];
+  const choices = PARTICLES[kind] ?? ["✨"];
   const items = useRef(Array.from({ length: 36 }, () => ({
     left: Math.random() * 100, duration: 4 + Math.random() * 5, delay: Math.random() * 5,
     emoji: choices[Math.floor(Math.random() * choices.length)] ?? "✨",
