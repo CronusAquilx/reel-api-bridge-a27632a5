@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export const TROLLS: { id: string; label: string; emoji: string }[] = [
   { id: "invert", label: "Invert colors", emoji: "🔄" },
@@ -19,6 +20,14 @@ export const TROLLS: { id: string; label: string; emoji: string }[] = [
   { id: "update", label: "Fake update", emoji: "⏳" },
   { id: "cursor", label: "Hide cursor", emoji: "🫥" },
   { id: "runaway", label: "Runaway buttons", emoji: "🏃" },
+  { id: "grayscale", label: "Old movie", emoji: "🎞️" },
+  { id: "sepia", label: "Vintage", emoji: "📜" },
+  { id: "saturate", label: "Neon colors", emoji: "🎨" },
+  { id: "tilt", label: "Tilt", emoji: "📐" },
+  { id: "squash", label: "Squash", emoji: "🥞" },
+  { id: "bounce", label: "Bouncy screen", emoji: "🏀" },
+  { id: "confetti", label: "Party rain", emoji: "🎊" },
+  { id: "freeze", label: "Simulated freeze", emoji: "🧊" },
 ];
 
 export const RICKROLL_ID = "dQw4w9WgXcQ";
@@ -29,7 +38,7 @@ export function youtubeId(input: string) {
   return m?.[1] ?? null;
 }
 
-const CSS: Record<string, string> = {
+const RAW_CSS: Record<string, string> = {
   invert: "html{filter:invert(1) hue-rotate(180deg)!important}",
   flip: "body{transform:rotate(180deg)!important;transform-origin:50% 50vh}",
   mirror: "body{transform:scaleX(-1)!important}",
@@ -41,7 +50,17 @@ const CSS: Record<string, string> = {
   tiny: "body{transform:scale(.4)!important;transform-origin:50% 0}",
   comic: "*{font-family:'Comic Sans MS','Comic Sans',cursive!important}",
   cursor: "*{cursor:none!important}",
+  grayscale: "html{filter:grayscale(1)!important}",
+  sepia: "html{filter:sepia(.9)!important}",
+  saturate: "html{filter:saturate(3)!important}",
+  tilt: "body{transform:rotate(3deg) scale(.92)!important;transform-origin:50% 50vh}",
+  squash: "body{transform:scaleY(.7)!important;transform-origin:50% 50vh}",
+  bounce: "@keyframes trl-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(20px)}}body{animation:trl-bounce 1.5s ease-in-out infinite!important}",
 };
+// Root filters/transforms can blank fixed desktop/video compositing layers.
+const CSS = Object.fromEntries(Object.entries(RAW_CSS).map(([id, css]) => [id,
+  css.replace(/\b(?:html|body)\{/g, "#birch-app-surface{").replace(/\*\{/g, "#birch-app-surface *{"),
+]));
 
 const ADS = [
   "🎉 CONGRATULATIONS! You are the 1,000,000th visitor! Claim your FREE iPhone!",
@@ -77,7 +96,7 @@ function Virus() {
       id: ++n.current, x: Math.random() * 75, y: Math.random() * 70,
       ad: ADS[Math.floor(Math.random() * ADS.length)] ?? "",
       video: n.current % 6 === 0 ? VIRUS_VIDEOS[Math.floor(Math.random() * VIRUS_VIDEOS.length)] : undefined,
-    }))].slice(-30));
+    }))].slice(-12));
     const t = setInterval(() => { add(); if (ctx) beep(ctx); }, 700);
     add(3);
     return () => { clearInterval(t); void ctx?.close(); };
@@ -87,19 +106,19 @@ function Virus() {
       <div key={p.id} className="pointer-events-auto absolute w-72 animate-in zoom-in-50 overflow-hidden rounded border-2 border-destructive bg-card text-card-foreground shadow-2xl" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
         <div className="flex items-center justify-between bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">
           <span>⚠ WARNING.exe</span>
-          <button type="button" aria-label="Close" onClick={() => setPops((all) => [...all.filter((x) => x.id !== p.id), { ...p, id: ++n.current, x: Math.random() * 75 }, { ...p, id: ++n.current, y: Math.random() * 70 }])}>✕</button>
+          <Button size="icon" variant="ghost" aria-label="Close" onClick={() => setPops((all) => all.filter((x) => x.id !== p.id))}>✕</Button>
         </div>
         {p.video
           ? <iframe title="ad" className="aspect-video w-full" src={`https://www.youtube-nocookie.com/embed/${p.video}?autoplay=1&controls=0`} allow="autoplay" />
           : <p className="animate-pulse p-3 text-sm font-semibold">{p.ad}</p>}
-        <button type="button" className="m-2 rounded bg-primary px-3 py-1 text-xs font-bold text-primary-foreground" onClick={() => setPops((all) => [...all, ...[0, 1, 2].map(() => ({ ...p, id: ++n.current, x: Math.random() * 75, y: Math.random() * 70 }))])}>CLAIM NOW!!!</button>
+        <Button size="sm" className="m-2" onClick={() => setPops((all) => [...all, { ...p, id: ++n.current, x: Math.random() * 75, y: Math.random() * 70 }].slice(-12))}>CLAIM NOW!!!</Button>
       </div>
     ))}
   </div>;
 }
 
-function Emoji() {
-  const items = useRef(Array.from({ length: 40 }, () => ({ l: Math.random() * 100, d: 3 + Math.random() * 5, delay: Math.random() * 5, e: ["💩", "😂", "🤡", "🐸", "🍕", "👀", "🔥"][Math.floor(Math.random() * 7)] })));
+function Emoji({ party = false }: { party?: boolean }) {
+  const items = useRef(Array.from({ length: 40 }, () => ({ l: Math.random() * 100, d: 3 + Math.random() * 5, delay: Math.random() * 5, e: (party ? ["🎊", "🎉", "⭐", "🎈", "✨", "🥳", "🎵"] : ["💩", "😂", "🤡", "🐸", "🍕", "👀", "🔥"])[Math.floor(Math.random() * 7)] })));
   return <div className="pointer-events-none fixed inset-0 z-[9996] overflow-hidden" data-screen-share="skip">
     <style>{"@keyframes trl-fall{from{transform:translateY(-10vh) rotate(0)}to{transform:translateY(110vh) rotate(720deg)}}"}</style>
     {items.current.map((x, i) => <span key={i} className="absolute text-4xl" style={{ left: `${x.l}%`, top: 0, animation: `trl-fall ${x.d}s linear ${x.delay}s infinite` }}>{x.e}</span>)}
@@ -140,7 +159,7 @@ function Update() {
 function Runaway() {
   useEffect(() => {
     const move = (e: PointerEvent) => {
-      document.querySelectorAll<HTMLElement>("button, a").forEach((b) => {
+      document.querySelectorAll<HTMLElement>("#birch-app-surface button, #birch-app-surface a").forEach((b) => {
         const r = b.getBoundingClientRect();
         const dx = r.left + r.width / 2 - e.clientX, dy = r.top + r.height / 2 - e.clientY;
         if (Math.hypot(dx, dy) < 90) b.style.transform = `translate(${Math.sign(dx) * (60 + Math.random() * 80)}px, ${Math.sign(dy) * (40 + Math.random() * 60)}px)`;
@@ -154,7 +173,20 @@ function Runaway() {
 
 /** Renders the active staff troll (cleared by "untroll" or after 10 minutes). */
 export function TrollLayer({ troll, onEnd }: { troll: string; onEnd: () => void }) {
-  useEffect(() => { const t = setTimeout(onEnd, 10 * 60 * 1000); return () => clearTimeout(t); }, [troll]);
+  const endRef = useRef(onEnd); endRef.current = onEnd;
+  useEffect(() => {
+    const t = setTimeout(() => endRef.current(), 60_000);
+    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") endRef.current(); };
+    window.addEventListener("keydown", escape);
+    return () => { clearTimeout(t); window.removeEventListener("keydown", escape); };
+  }, [troll]);
+  return <>
+    <ActiveTroll troll={troll} />
+    <div data-screen-share="skip" className="fixed right-3 top-3 z-[10001]"><Button variant="secondary" onClick={onEnd}>Stop effect · Esc</Button></div>
+  </>;
+}
+
+function ActiveTroll({ troll }: { troll: string }) {
   const [kind = "", arg = ""] = troll.split(":");
   if (kind === "video" || kind === "rickroll") {
     const id = kind === "rickroll" ? RICKROLL_ID : arg;
@@ -164,7 +196,8 @@ export function TrollLayer({ troll, onEnd }: { troll: string; onEnd: () => void 
   }
   if (CSS[kind]) return <style>{CSS[kind]}</style>;
   if (kind === "virus") return <Virus />;
-  if (kind === "emoji") return <Emoji />;
+  if (kind === "emoji" || kind === "confetti") return <Emoji party={kind === "confetti"} />;
+  if (kind === "freeze") return <div className="fixed inset-0 z-[9996] grid place-items-center bg-background/80 text-foreground"><p className="text-2xl font-semibold">🧊 Simulated freeze</p></div>;
   if (kind === "hacker") return <Hacker />;
   if (kind === "bsod") return <Bsod />;
   if (kind === "update") return <Update />;
