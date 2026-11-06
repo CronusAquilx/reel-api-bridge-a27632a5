@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { Eye, EyeOff, Maximize, Minimize, MousePointer2, PanelRight, RefreshCw, Search, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,7 +138,7 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
   };
   const fresh = Boolean(frame && now - lastFrame < 12_000);
 
-  return <div ref={wrapRef} role="dialog" aria-modal="true" aria-label={`Screen viewer for ${visitor.name}`} className="fixed inset-0 z-[10020] flex h-dvh flex-col bg-background text-foreground">
+  return createPortal(<div ref={wrapRef} role="dialog" aria-modal="true" aria-label={`Screen viewer for ${visitor.name}`} className="fixed inset-0 z-[10020] flex h-dvh flex-col bg-background text-foreground">
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`size-2.5 shrink-0 rounded-full ${fresh ? "bg-primary" : "bg-muted-foreground"}`} />
@@ -190,5 +191,5 @@ export function ScreenViewer({ visitor, canControl, canTroll, onClose }: {
       <span>{control ? "Click their screen to click, scroll to scroll, and type while it is selected." : "Choose Take control only when you need to interact."}</span>
       <span className="shrink-0">{frame?.shot ? "Live picture" : "Layout fallback"} · {fresh ? "Live" : "Waiting"}</span>
     </footer>
-  </div>;
+  </div>, document.body);
 }

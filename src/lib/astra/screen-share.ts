@@ -123,7 +123,7 @@ export async function captureLiveFrame(): Promise<ScreenFrame> {
         skipFonts: true,
         filter: (node) => {
           if (!(node instanceof HTMLElement)) return true;
-          if (node.dataset.screenShare === "skip") return false;
+          if (node.dataset["screenShare"] === "skip") return false;
           return !["IFRAME", "VIDEO", "EMBED", "OBJECT"].includes(node.tagName);
         },
       });
