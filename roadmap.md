@@ -1,5 +1,10 @@
 # Birchbeat import roadmap
 
+## Current request — full songs and previous Music interface
+- [x] Restore Qaisify navigation, artwork cards, library, liked songs, stats and settings without restoring old sources.
+- [x] Resolve full YouTube tracks before using labeled previews, including key-free public metadata searches when Piped is unavailable.
+- [x] Ten focused music checks passed; automatic compilation is clean. One real guest desktop flow confirmed One More Time plays with a 321-second duration and advances to 14 seconds in the restored interface.
+
 ## Current request — client-side key-free Music
 - [x] Replace mock Music views with one shared runtime search tab across existing Music entry points.
 - [x] Use sequential Piped searches, Apple/Deezer JSONP previews and the existing persistent player with graceful errors and cancellable requests.

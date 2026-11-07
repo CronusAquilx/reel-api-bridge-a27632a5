@@ -119,9 +119,8 @@ export async function playList(list: Track[], i: number) {
   candidates = []; candidateIndex = 0;
   set({ queue: list, cur: i, status: "Finding your song…", paused: true, loading: true, time: 0, dur: t.duration, mode: null, fallbackId: null });
   audio.playbackRate = state.speed;
-  if (t.preview) { await audioFallback(t, my); return; }
   try {
-    const results = t.source === "piped" && /^[\w-]{11}$/.test(t.id) ? list.filter(row => row.source === "piped" && /^[\w-]{11}$/.test(row.id)).slice(list.slice(0, i).filter(row => row.source === "piped").length) : await searchMusic(`${t.artist} ${t.title}`, signal);
+    const results = t.source === "piped" && !t.preview && /^[\w-]{11}$/.test(t.id) ? [t] : await searchMusic(`${t.artist} ${t.title}`, signal, true);
     if (my !== playId || signal.aborted) return;
     const first = results[0];
     if (!first) { await audioFallback(t, my); return; }
@@ -132,12 +131,12 @@ export async function playList(list: Track[], i: number) {
     ytGeneration = my;
     set({ mode: "video", status: "Starting YouTube…" });
     player.loadVideoById(first.id); player.setVolume(state.volume * 100); player.setPlaybackRate?.(state.speed);
-    playbackWatchdog = setTimeout(() => { if (my === playId && state.loading && state.mode === "video") { player.stopVideo(); void audioFallback(t, my); } }, 12000);
+    playbackWatchdog = setTimeout(() => { if (my === playId && state.loading && state.mode === "video") set({ loading: false, paused: true, status: "Press play to start YouTube" }); }, 12000);
   } catch { if (my === playId && !signal.aborted) await audioFallback(t, my); }
 }
 let proxyFrame: HTMLIFrameElement | null = null;
 function clearProxy() { proxyFrame?.remove(); proxyFrame = null; if (typeof document !== "undefined") document.querySelectorAll<HTMLElement>(".qaisify-playback-host").forEach(el => { el.style.visibility = ""; }); }
-// Blocked YouTube embeds go straight to server-fetched audio (network restrictions only block the YouTube player).
+// Previews are a last resort after full-song lookup and official embedding fail.
 async function audioFallback(t: Track, my: number) {
   ensure();
   if (my !== playId || !audio || !playbackRequest || playbackRequest.signal.aborted) return;
