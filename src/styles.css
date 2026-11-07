@@ -1361,3 +1361,154 @@ html[data-dock-motion="on"] [data-apple="macos"] .apple-dock-item:has(+ .apple-d
   .windows2-desktop .windows-custom-shortcuts { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .windows2-desktop *, .windows2-desktop *::before { animation: none !important; transition: none !important; } }
+
+/* Per-layout app, navigation, font and wallpaper personalization. */
+:root { --app-icon-radius: 23%; }
+html[data-app-icon-shape="circle"] { --app-icon-radius: 50%; }
+html[data-app-icon-shape="rounded"] { --app-icon-radius: 22%; }
+html[data-app-icon-shape="square"] { --app-icon-radius: 2px; }
+html[data-app-icon-shape="rectangle"] { --app-icon-radius: 10px; }
+html[data-app-icon-shape="liquid"] { --app-icon-radius: 42% 58% 55% 45% / 48% 42% 58% 52%; }
+html[data-app-icon-shape]:not([data-app-icon-shape="native"]) :is(.desktop-color-icon, .windows-app-icon, .apple-icon, .reference-app-art, .reference-game, .switch-system-button, .win2-desktop-icon-art) { border-radius: var(--app-icon-radius); }
+html[data-app-icon-shape]:not([data-app-icon-shape="native"]) .win2-desktop-icon-art { background: color-mix(in oklch, var(--desktop-cyan) 16%, transparent); }
+html[data-app-icon-shape="liquid"] :is(.desktop-color-icon, .windows-app-icon, .apple-icon, .reference-app-art, .reference-game, .switch-system-button, .win2-desktop-icon-art) { background: color-mix(in oklch, var(--card) var(--glass-opacity), transparent); backdrop-filter: blur(var(--glass-blur)) saturate(160%); border: 1px solid var(--liquid-edge); box-shadow: inset 0 1px 0 var(--liquid-sheen), var(--desktop-shadow); }
+html[data-app-icon-shape="rectangle"] :is(.desktop-color-icon, .windows-app-icon) { width: 46px; height: 32px; }
+html[data-app-icon-shape="rectangle"] :is(.apple-icon-home, .win2-desktop-icon-art) { width: 82px; height: 56px; }
+html[data-app-icon-shape="rectangle"] :is(.reference-games.is-shelf .reference-game, .switch-tile) { width: 122px; height: 78px; aspect-ratio: 16 / 10; }
+html[data-app-icon-shape="rectangle"] .reference-games.is-grid .reference-game { aspect-ratio: 16 / 10; }
+html[data-app-logo-style="monochrome"] :is(.desktop-color-icon, .windows-app-icon, .apple-icon, .reference-app-art, .switch-system-button, .win2-desktop-icon-art) { background: var(--secondary); color: var(--foreground); box-shadow: none; }
+html[data-app-logo-style="outline"] :is(.desktop-color-icon, .windows-app-icon, .apple-icon, .reference-app-art, .switch-system-button, .win2-desktop-icon-art) { background: transparent; color: var(--foreground); border: 1px solid currentColor; box-shadow: none; }
+
+html[data-tile-size="small"] :is(.apple-icon-home) { width: 48px; height: 48px; }
+html[data-tile-size="small"] .apple-dock-item { width: 44px; height: 44px; }
+html[data-tile-size="small"] :is(.desktop-color-icon, .windows-app-icon) { width: 28px; height: 28px; }
+html[data-tile-size="small"] .windows-shortcut { width: 72px; min-height: 58px; }
+html[data-tile-size="small"] .switch-tile { width: 170px; height: 170px; }
+html[data-tile-size="large"] .apple-icon-home { width: 80px; height: 80px; }
+html[data-tile-size="large"] .apple-dock-item { width: 64px; height: 64px; }
+html[data-tile-size="large"] :is(.desktop-color-icon, .windows-app-icon) { width: 44px; height: 44px; }
+html[data-tile-size="large"] .windows-shortcut { width: 100px; min-height: 82px; }
+html[data-tile-size="large"] .switch-tile { width: 270px; height: 270px; }
+html[data-tile-size="large"] .reference-games.is-shelf .reference-game { width: 104px; height: 104px; }
+html[data-tile-size="small"] .reference-games.is-shelf .reference-game { width: 56px; height: 56px; }
+
+html[data-app-arrangement="shelf"] :is(.reference-games, .switch-tiles) { display: flex; grid-template-columns: none; grid-template-rows: none; align-items: center; gap: 14px; overflow-x: auto; overflow-y: hidden; }
+html[data-app-arrangement="shelf"] :is(.reference-games .reference-game, .switch-tiles .switch-tile) { width: 104px; height: 104px; min-height: 0; flex: 0 0 auto; aspect-ratio: 1; }
+html[data-app-arrangement="grid"] :is(.reference-games, .switch-tiles) { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); grid-template-rows: none; grid-auto-rows: auto; gap: 14px; overflow: visible; }
+html[data-app-arrangement="grid"] :is(.reference-games .reference-game, .switch-tiles .switch-tile) { width: 100%; height: auto; min-height: 96px; aspect-ratio: 1; }
+html[data-app-arrangement="list"] :is(.reference-games, .switch-tiles) { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-rows: auto; gap: 8px; overflow: visible; }
+html[data-app-arrangement="list"] :is(.reference-games .reference-game, .switch-tiles .switch-tile) { display: flex; width: 100%; height: 78px; min-height: 78px; flex-direction: row; justify-content: flex-start; aspect-ratio: auto; }
+html[data-app-arrangement="list"] .reference-game :is(.console-art, .reference-app-art) { width: 78px; height: 78px; flex-shrink: 0; }
+html[data-app-arrangement="list"] .reference-game-label { position: static; flex: 1; padding: 14px; background: transparent; color: var(--console-foreground); }
+html[data-app-arrangement="list"] .switch-tile-art { height: 78px; flex-direction: row; justify-content: flex-start; gap: 18px; padding: 14px 22px; }
+html[data-app-arrangement="list"] .switch-tile-art svg { width: 42px; height: 42px; }
+html[data-app-arrangement="list"] :is(.windows-home > div.grid, .windows-start > div.grid, .apple-launchpad > div.grid, .ipad-home-grid) { display: grid; grid-template-columns: minmax(0, 1fr); }
+html[data-app-arrangement="list"] :is(.windows-app-button, .apple-grid-app) { min-height: 58px; flex-direction: row; justify-content: flex-start; padding-inline: 14px; text-align: left; }
+html[data-app-arrangement="shelf"] :is(.windows-home > div.grid, .windows-start > div.grid) { display: flex; overflow-x: auto; }
+html[data-app-arrangement="shelf"] :is(.windows-app-button) { width: 96px; flex-shrink: 0; }
+html[data-app-arrangement="shelf"] .windows-shortcuts { flex-direction: row; max-width: calc(100% - 32px); overflow-x: auto; }
+html[data-app-arrangement="shelf"] .win2-desktop-icons { grid-template-rows: 86px; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 86px; }
+html[data-app-arrangement="list"] .win2-desktop-icons { grid-template-columns: 86px; grid-template-rows: none; grid-auto-flow: row; grid-auto-rows: 86px; }
+html[data-app-arrangement="grid"] .win2-desktop-icons { grid-template-columns: repeat(auto-fill, 86px); grid-template-rows: none; grid-auto-flow: row; grid-auto-rows: 86px; }
+
+html[data-appearance-layout="windows"][data-taskbar-position="top"] .windows-taskbar { top: 34px; bottom: auto; }
+html[data-appearance-layout="windows2"][data-taskbar-position="top"] .windows-taskbar { top: 0; bottom: auto; }
+html[data-appearance-layout="windows2"][data-taskbar-position="bottom"] .windows-taskbar { top: auto; bottom: 0; }
+html[data-appearance-layout="windows"][data-taskbar-position="bottom"] .windows-taskbar { top: auto; bottom: 0; }
+html[data-appearance-layout="windows"][data-taskbar-position="left"] .windows-taskbar,
+html[data-appearance-layout="windows2"][data-taskbar-position="left"] .windows-taskbar { inset: 0 auto 0 0; width: 64px; max-width: 64px; height: 100%; margin: 0; transform: none; flex-direction: column; border: 0; border-right: 1px solid var(--border); border-radius: 0; }
+html[data-appearance-layout="windows"][data-taskbar-position="right"] .windows-taskbar,
+html[data-appearance-layout="windows2"][data-taskbar-position="right"] .windows-taskbar { inset: 0 0 0 auto; width: 64px; max-width: 64px; height: 100%; margin: 0; transform: none; flex-direction: column; border: 0; border-left: 1px solid var(--border); border-radius: 0; }
+html[data-appearance-layout="windows"][data-taskbar-position="left"] .windows-taskbar > div:first-child,
+html[data-appearance-layout="windows"][data-taskbar-position="right"] .windows-taskbar > div:first-child,
+html[data-appearance-layout="windows2"][data-taskbar-position="left"] .windows-taskbar > div:first-child,
+html[data-appearance-layout="windows2"][data-taskbar-position="right"] .windows-taskbar > div:first-child { position: static; max-width: none; max-height: 100%; transform: none; flex-direction: column; justify-content: center; overflow-y: auto; }
+html[data-appearance-layout="windows"][data-taskbar-position="left"] :is(.windows-taskbar > button, .windows-taskbar > div:nth-last-child(2)),
+html[data-appearance-layout="windows"][data-taskbar-position="right"] :is(.windows-taskbar > button, .windows-taskbar > div:nth-last-child(2)),
+html[data-appearance-layout="windows2"][data-taskbar-position="left"] :is(.windows-taskbar > button, .windows-taskbar > div:nth-last-child(2)),
+html[data-appearance-layout="windows2"][data-taskbar-position="right"] :is(.windows-taskbar > button, .windows-taskbar > div:nth-last-child(2)) { display: none; }
+html[data-taskbar-alignment="start"] .windows-taskbar > div:first-child { justify-content: flex-start; }
+html[data-taskbar-alignment="end"] .windows-taskbar > div:first-child { justify-content: flex-end; }
+html[data-appearance-layout="windows2"][data-taskbar-alignment="start"] .windows-taskbar > div:first-child { left: 12px; transform: none; }
+html[data-appearance-layout="windows2"][data-taskbar-alignment="end"] .windows-taskbar > div:first-child { right: 170px; left: auto; transform: none; }
+
+html[data-appearance-layout="macos"][data-taskbar-position="top"] .apple-dock-row { position: absolute; inset: 30px 0 auto; }
+html[data-appearance-layout="ipad"][data-taskbar-position="top"] .apple-dock-row { position: absolute; inset: 28px 0 auto; }
+html[data-appearance-layout="macos"][data-taskbar-position="bottom"] .apple-dock-row,
+html[data-appearance-layout="ipad"][data-taskbar-position="bottom"] .apple-dock-row { position: absolute; inset: auto 0 0; }
+html[data-appearance-layout="macos"][data-taskbar-position="left"] .apple-dock-row,
+html[data-appearance-layout="ipad"][data-taskbar-position="left"] .apple-dock-row { position: absolute; inset: 30px auto 0 0; align-items: center; padding: 8px; }
+html[data-appearance-layout="macos"][data-taskbar-position="right"] .apple-dock-row,
+html[data-appearance-layout="ipad"][data-taskbar-position="right"] .apple-dock-row { position: absolute; inset: 30px 0 0 auto; align-items: center; padding: 8px; }
+html[data-appearance-layout="macos"][data-taskbar-position="left"] .apple-dock,
+html[data-appearance-layout="macos"][data-taskbar-position="right"] .apple-dock,
+html[data-appearance-layout="ipad"][data-taskbar-position="left"] .apple-dock,
+html[data-appearance-layout="ipad"][data-taskbar-position="right"] .apple-dock { max-height: calc(100dvh - 70px); flex-direction: column; overflow-y: auto; }
+html[data-taskbar-alignment="start"] .apple-dock-row { justify-content: flex-start; }
+html[data-taskbar-alignment="end"] .apple-dock-row { justify-content: flex-end; }
+html[data-appearance-layout="switch"][data-taskbar-position="top"] .switch-footer { position: absolute; inset: 0 0 auto; z-index: 310; }
+html[data-appearance-layout="switch"][data-taskbar-position="bottom"] .switch-footer { position: absolute; inset: auto 0 0; z-index: 310; }
+html[data-appearance-layout="sony"][data-taskbar-position="bottom"] .reference-brandbar { order: 3; }
+html[data-appearance-layout="series"][data-taskbar-position="right"] .reference-workspace,
+html[data-appearance-layout="wii"][data-taskbar-position="right"] .reference-workspace,
+html[data-appearance-layout="neutral"][data-taskbar-position="right"] .reference-workspace { flex-direction: row-reverse; }
+html[data-appearance-layout="series"][data-taskbar-position="right"] .reference-sidebar,
+html[data-appearance-layout="wii"][data-taskbar-position="right"] .reference-sidebar,
+html[data-appearance-layout="neutral"][data-taskbar-position="right"] .reference-sidebar { border-right: 0; border-left: 1px solid color-mix(in oklch, var(--console-foreground) 10%, transparent); }
+html[data-appearance-layout="series"][data-taskbar-position="top"] .reference-workspace,
+html[data-appearance-layout="wii"][data-taskbar-position="top"] .reference-workspace,
+html[data-appearance-layout="neutral"][data-taskbar-position="top"] .reference-workspace { flex-direction: column; }
+html[data-appearance-layout="series"][data-taskbar-position="top"] .reference-sidebar,
+html[data-appearance-layout="wii"][data-taskbar-position="top"] .reference-sidebar,
+html[data-appearance-layout="neutral"][data-taskbar-position="top"] .reference-sidebar { width: 100%; margin: 0; padding: 8px 14px; flex-direction: row; overflow-x: auto; border: 0; border-bottom: 1px solid color-mix(in oklch, var(--console-foreground) 10%, transparent); border-radius: 0; }
+html[data-appearance-layout="series"][data-taskbar-position="top"] :is(.reference-account, .reference-pinned, .reference-sidebar-bottom),
+html[data-appearance-layout="wii"][data-taskbar-position="top"] :is(.reference-account, .reference-pinned, .reference-sidebar-bottom, .reference-sidebar h2),
+html[data-appearance-layout="neutral"][data-taskbar-position="top"] :is(.reference-account, .reference-pinned, .reference-sidebar-bottom) { display: none; }
+
+html[data-font-family]:not([data-font-family="native"]) :is(.windows-desktop, .apple-desktop, .console-shell, .reference-console, .switch-shell, .app-shell),
+html[data-font-family]:not([data-font-family="native"]) :is(.windows-desktop, .apple-desktop, .console-shell, .reference-console, .switch-shell, .app-shell) :is(button, input, textarea, select, h1, h2, h3, h4, p, span, a, time, strong, small) { font-family: var(--appearance-font); }
+
+.appearance-wallpaper-overlay { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+html[data-wallpaper-overlay]:not([data-wallpaper-overlay="native"]) :is(.windows-wallpaper, .reference-wallpaper) { filter: none; }
+html[data-wallpaper-overlay]:not([data-wallpaper-overlay="native"]) .switch-wallpaper,
+html[data-wallpaper-overlay]:not([data-wallpaper-overlay="native"]) .console-backdrop > img { opacity: 1; }
+html[data-wallpaper-overlay]:not([data-wallpaper-overlay="native"]) :is(.console-shade, .desktop-home-shell::before) { background: transparent; }
+html[data-wallpaper-overlay="none"] .appearance-wallpaper-overlay { background: transparent; }
+html[data-wallpaper-overlay="black"] .appearance-wallpaper-overlay { background: color-mix(in oklch, var(--console-ink) var(--custom-bg-dim), transparent); }
+html[data-wallpaper-overlay="gradient"] .appearance-wallpaper-overlay { background: linear-gradient(180deg, transparent, color-mix(in oklch, var(--console-ink) var(--custom-bg-dim), transparent)); }
+html[data-wallpaper-overlay="frosted"] .appearance-wallpaper-overlay { background: color-mix(in oklch, var(--console-ink) 12%, transparent); backdrop-filter: blur(var(--wallpaper-overlay-blur)); }
+
+.personalization-preview-overlay { position: absolute; inset: 0; pointer-events: none; }
+.personalization-preview[data-overlay="black"] .personalization-preview-overlay { background: color-mix(in oklch, var(--console-ink) var(--preview-overlay), transparent); }
+.personalization-preview[data-overlay="gradient"] .personalization-preview-overlay { background: linear-gradient(180deg, transparent, color-mix(in oklch, var(--console-ink) var(--preview-overlay), transparent)); }
+.personalization-preview[data-overlay="frosted"] .personalization-preview-overlay { background: color-mix(in oklch, var(--console-ink) 12%, transparent); backdrop-filter: blur(var(--preview-overlay-blur)); }
+.personalization-preview[data-font="clean"] { font-family: var(--font-sans); }
+.personalization-preview[data-font="rounded"] { font-family: "Outfit", var(--font-sans); }
+.personalization-preview[data-font="serif"] { font-family: var(--font-display); }
+.personalization-preview[data-font="mono"] { font-family: var(--font-mono); }
+.personalization-preview-app-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: var(--desktop-cyan); }
+.personalization-preview[data-icon-shape="circle"] .personalization-preview-app-icon { border-radius: 50%; }
+.personalization-preview[data-icon-shape="rounded"] .personalization-preview-app-icon { border-radius: 22%; }
+.personalization-preview[data-icon-shape="square"] .personalization-preview-app-icon { border-radius: 2px; }
+.personalization-preview[data-icon-shape="rectangle"] .personalization-preview-app-icon { width: 42px; height: 28px; border-radius: 7px; }
+.personalization-preview[data-icon-shape="liquid"] .personalization-preview-app-icon { border-radius: 42% 58% 55% 45% / 48% 42% 58% 52%; background: color-mix(in oklch, var(--card) var(--glass-opacity), transparent); border: 1px solid var(--liquid-edge); backdrop-filter: blur(var(--glass-blur)); }
+.personalization-preview[data-logo-style="monochrome"] .personalization-preview-app-icon { background: var(--secondary); color: var(--foreground); }
+.personalization-preview[data-logo-style="outline"] .personalization-preview-app-icon { background: transparent; color: var(--foreground); border: 1px solid currentColor; }
+.personalization-preview[data-icon-size="small"] .personalization-preview-app-icon { scale: .8; }
+.personalization-preview[data-icon-size="large"] .personalization-preview-app-icon { scale: 1.2; }
+.personalization-preview[data-arrangement="list"] .personalization-preview-dock { flex-direction: column; left: auto; right: 14px; transform: none; }
+.personalization-preview[data-arrangement="grid"] .personalization-preview-dock { display: grid; grid-template-columns: repeat(2, auto); }
+.personalization-preview[data-taskbar-position="top"] .personalization-preview-dock { top: 14px; bottom: auto; }
+.personalization-preview[data-taskbar-position="left"] .personalization-preview-dock { top: 50%; bottom: auto; left: 14px; flex-direction: column; transform: translateY(-50%); }
+.personalization-preview[data-taskbar-position="right"] .personalization-preview-dock { top: 50%; right: 14px; bottom: auto; left: auto; flex-direction: column; transform: translateY(-50%); }
+
+@media (max-width: 760px) {
+  html[data-tile-size="large"] .apple-icon-home { width: 62px; height: 62px; }
+  html[data-tile-size="large"] .apple-dock-item { width: 50px; height: 50px; }
+  html[data-tile-size="large"] .switch-tile { width: 210px; height: 210px; }
+  html[data-app-arrangement="grid"] :is(.reference-games, .switch-tiles) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-appearance-layout="windows2"][data-taskbar-alignment="end"] .windows-taskbar > div:first-child { right: 70px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-icon-shape] :is(.reference-game, .switch-tile, .apple-dock-item, .desktop-dock-item) { transition: none; }
+}
