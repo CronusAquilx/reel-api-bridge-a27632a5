@@ -13,6 +13,7 @@ import { NowPlayingBar } from "@/components/music/NowPlayingBar";
 import { RoomFollower } from "@/components/RoomFollower";
 import { cn } from "@/lib/utils";
 import wallpaper from "@/assets/launcher-wallpaper.jpg";
+import windows2Wallpaper from "@/assets/windows-wallpaper.jpg";
 import { WallpaperEffects } from "@/components/astra/WallpaperEffects";
 import { WallpaperMedia } from "@/components/astra/WallpaperMedia";
 import { DesktopClock, DesktopStatusBar } from "@/components/astra/DesktopSurface";
@@ -149,7 +150,7 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
     dragSelection.current = null; setSelection(null);
   };
   return <div data-full-window={fullWindow} className={cn("windows-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground", modern && "windows2-desktop")}>
-    {look.artwork && <WallpaperMedia src={look.customBg || wallpaper} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="windows-wallpaper absolute inset-0 size-full object-cover"/>}
+    {look.artwork && <WallpaperMedia src={look.customBg || (modern ? windows2Wallpaper : wallpaper)} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="windows-wallpaper absolute inset-0 size-full object-cover"/>}
     <WallpaperEffects/>
     {!modern && <DesktopStatusBar onApps={() => { setStart(!start); setQuick(false); }} onSettings={() => { setQuick(!quick); setStart(false); }}/>}
     <div ref={workspace} data-icon-size={iconSize} className="windows-workspace relative min-h-0 flex-1" onPointerDown={beginSelection} onPointerMove={moveSelection} onPointerUp={finishSelection} onPointerCancel={finishSelection} onContextMenu={event => { if (!modern || (event.target as HTMLElement).closest(".windows-window,.desktop-widget-panel")) return; showContext(event); }}>

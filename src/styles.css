@@ -1268,3 +1268,96 @@ html[data-dock-motion="on"] [data-apple="macos"] .apple-dock-item:has(+ .apple-d
 @keyframes chooser-card-in { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
 @media (max-width: 760px) { .layout-chooser { padding: 18px 20px; gap: 24px; }.layout-choice-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }.layout-chooser-heading { margin-bottom: 20px; }.layout-choice-label { font-size: 12px; padding-left: 3px; padding-right: 3px; }.layout-choice-simple { grid-template-columns: repeat(2,minmax(0,1fr)); }.layout-chooser-content { margin: 0 auto; }.layout-step-mark { font-size: 18px; } }
 @media (prefers-reduced-motion: reduce) { .layout-chooser *, .wallpaper-browser * { animation: none !important; transition: none !important; }.layout-chooser .layout-choice.is-highlighted, .wallpaper-tile:hover, .wallpaper-tile:hover img { transform: none; } }
+
+/* Windows 2.0: Windows 11 desktop composition, isolated from the original Windows layout. */
+.windows2-desktop { --win2-mica: color-mix(in oklch, var(--card) 88%, transparent); --win2-edge: color-mix(in oklch, var(--foreground) 14%, transparent); font-family: "Segoe UI", var(--font-sans); }
+.windows2-desktop::before { display: none; }
+.windows2-desktop .windows-workspace { position: absolute; inset: 0 0 48px; }
+.windows2-desktop .windows-wallpaper { filter: none; }
+.win2-desktop-icons { position: absolute; inset: 12px auto 12px 12px; z-index: 2; display: grid; grid-template-rows: repeat(6, 86px); grid-auto-flow: column; grid-auto-columns: 86px; gap: 2px; max-width: calc(100% - 24px); overflow: hidden; }
+.win2-desktop-icon.win2-desktop-icon { width: 82px; height: 82px; min-height: 82px; padding: 4px; gap: 2px; border: 1px solid transparent; border-radius: 3px; color: var(--desktop-ink); line-height: 1.15; text-shadow: 0 1px 3px var(--console-ink); }
+.win2-desktop-icon[data-selected="true"] { border-color: color-mix(in oklch, var(--desktop-cyan) 65%, transparent); background: color-mix(in oklch, var(--desktop-cyan) 24%, transparent); }
+.win2-desktop-icon-art { display: grid; place-items: center; width: 46px; height: 46px; color: var(--desktop-cyan); }
+.win2-desktop-icon-art svg { width: 38px; height: 38px; stroke-width: 1.35; }
+.win2-desktop-icon-art:has(svg.lucide-folder) { color: var(--desktop-gold); }
+.win2-desktop-icon-art:has(svg.lucide-file-text) { color: var(--desktop-ink); }
+[data-icon-size="large"] .win2-desktop-icons { grid-template-rows: repeat(5, 102px); grid-auto-columns: 102px; }
+[data-icon-size="large"] .win2-desktop-icon.win2-desktop-icon { width: 98px; height: 98px; }
+[data-icon-size="large"] .win2-desktop-icon-art { width: 58px; height: 58px; }
+[data-icon-size="large"] .win2-desktop-icon-art svg { width: 50px; height: 50px; }
+[data-icon-size="small"] .win2-desktop-icons { grid-template-rows: repeat(8, 68px); grid-auto-columns: 76px; }
+[data-icon-size="small"] .win2-desktop-icon.win2-desktop-icon { width: 72px; height: 64px; min-height: 64px; font-size: 10px; }
+[data-icon-size="small"] .win2-desktop-icon-art { width: 32px; height: 32px; }
+[data-icon-size="small"] .win2-desktop-icon-art svg { width: 28px; height: 28px; }
+.win2-selection-box { position: absolute; z-index: 50; pointer-events: none; border: 1px solid var(--desktop-cyan); background: color-mix(in oklch, var(--desktop-cyan) 24%, transparent); }
+.win2-context-menu { position: absolute; z-index: 450; width: 236px; padding: 6px; border: 1px solid var(--win2-edge); border-radius: 8px; background: color-mix(in oklch, var(--card) 94%, transparent); color: var(--foreground); box-shadow: var(--desktop-shadow); backdrop-filter: blur(28px) saturate(140%); }
+.win2-context-menu button { width: 100%; height: 34px; justify-content: flex-start; gap: 12px; border-radius: 4px; padding-inline: 10px; font-size: 12px; }
+.win2-context-menu button svg { width: 16px; height: 16px; }
+.win2-context-menu hr { margin: 5px; border-color: var(--win2-edge); }
+.win2-context-menu > p { padding: 6px 10px 3px; color: var(--muted-foreground); font-size: 11px; }
+.win2-start { bottom: 58px; width: min(620px, calc(100% - 24px)); height: min(650px, calc(100% - 72px)); border-color: var(--win2-edge); border-radius: 8px; background: var(--win2-mica); }
+.win2-start .windows-app-button { min-height: 82px; }
+.win2-start > footer { min-height: 58px; }
+.win2-quick { bottom: 58px; border-color: var(--win2-edge); background: var(--win2-mica); }
+.win2-taskbar.windows-taskbar { position: absolute; inset: auto 0 0; width: 100%; max-width: none; height: 48px; margin: 0; padding: 3px 10px; transform: none; border: 0; border-top: 1px solid var(--win2-edge); border-radius: 0; background: var(--win2-mica); }
+.win2-taskbar > div:first-child { position: absolute; left: 50%; max-width: calc(100% - 300px); transform: translateX(-50%); }
+.win2-taskbar > div:nth-last-child(2) { display: block; }
+.win2-taskbar > button { margin-left: auto; }
+.win2-taskbar > button:last-child { margin-left: 0; }
+.win2-taskbar .windows-task-button { width: 40px; height: 40px; }
+.win2-taskbar .desktop-color-icon { width: 28px; height: 28px; background: transparent; box-shadow: none; }
+.win2-taskbar .desktop-color-icon svg { width: 23px; height: 23px; }
+.win2-now-playing { position: absolute; right: 0; bottom: 48px; left: 0; }
+.win2-now-playing .now-playing { border-color: var(--win2-edge); background: var(--win2-mica); }
+.windows2-desktop[data-full-window="true"] > .windows-taskbar { display: flex; }
+.windows2-desktop .windows-window { border-color: var(--win2-edge); background: var(--background); }
+.windows2-desktop .windows-window > header { height: 42px; background: var(--win2-mica); }
+.windows2-desktop .windows-custom-shortcuts { left: 110px; }
+.win2-explorer { display: grid; grid-template-columns: 190px minmax(0,1fr); height: 100%; min-height: 0; background: var(--background); color: var(--foreground); }
+.win2-explorer > aside { display: flex; min-height: 0; flex-direction: column; gap: 3px; padding: 12px 8px; border-right: 1px solid var(--win2-edge); background: color-mix(in oklch, var(--card) 55%, transparent); }
+.win2-explorer > aside strong { display: flex; align-items: center; gap: 10px; padding: 9px 10px; font-size: 13px; }
+.win2-explorer > aside button { height: 34px; justify-content: flex-start; gap: 10px; padding-inline: 10px; font-size: 12px; }
+.win2-explorer > aside svg { width: 16px; color: var(--desktop-cyan); }
+.win2-explorer > aside > span { margin: 14px 10px 5px; color: var(--muted-foreground); font-size: 11px; }
+.win2-explorer > main { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
+.win2-explorer-command { display: flex; align-items: center; gap: 2px; min-height: 46px; padding: 6px 12px; border-bottom: 1px solid var(--win2-edge); }
+.win2-explorer-command > span { flex: 1; }
+.win2-explorer-address { display: flex; align-items: center; gap: 7px; min-height: 42px; padding: 6px 16px; border-bottom: 1px solid var(--win2-edge); font-size: 12px; }
+.win2-explorer-address svg { width: 15px; }
+.win2-explorer-content { min-height: 0; flex: 1; overflow-y: auto; padding: 16px 22px; }
+.win2-explorer-content h2 { margin: 4px 0 14px; font-size: 13px; font-weight: 600; }
+.win2-folder-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 26px; }
+.win2-folder-grid > button { height: auto; min-width: 0; justify-content: flex-start; gap: 12px; padding: 12px; text-align: left; }
+.win2-folder-art { display: grid; place-items: center; width: 46px; height: 42px; flex-shrink: 0; border-radius: 5px; background: color-mix(in oklch, var(--desktop-cyan) 18%, var(--card)); color: var(--desktop-cyan); }
+.win2-folder-grid strong, .win2-folder-grid small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.win2-folder-grid strong { font-size: 12px; }
+.win2-folder-grid small { margin-top: 4px; color: var(--muted-foreground); font-size: 10px; }
+.win2-recent-items { border-top: 1px solid var(--win2-edge); }
+.win2-recent-items > button { width: 100%; justify-content: flex-start; gap: 12px; border-radius: 0; }
+.win2-recent-items svg { width: 17px; color: var(--desktop-gold); }
+.win2-recent-items small { margin-left: auto; color: var(--muted-foreground); }
+.win2-empty-recent, .win2-item-empty { display: flex; height: 100%; min-height: 220px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted-foreground); text-align: center; }
+.win2-empty-recent { height: auto; min-height: 180px; }
+.win2-empty-recent > svg, .win2-item-empty > svg { width: 54px; height: 54px; color: var(--desktop-cyan); stroke-width: 1.2; }
+.win2-empty-recent strong, .win2-item-empty h2 { color: var(--foreground); font-size: 13px; }
+.win2-empty-recent span, .win2-item-empty p { font-size: 11px; }
+.win2-text-editor { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.win2-text-editor > div { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border-bottom: 1px solid var(--win2-edge); font-size: 12px; }
+.win2-text-editor textarea { min-height: 0; flex: 1; resize: none; border: 0; outline: 0; background: var(--background); color: var(--foreground); padding: 18px; font: 14px/1.6 var(--font-mono); }
+@media (max-width: 760px) {
+  .win2-desktop-icons { grid-template-rows: repeat(5,76px); grid-auto-columns: 72px; }
+  .win2-desktop-icon.win2-desktop-icon { width: 68px; height: 72px; min-height: 72px; font-size: 10px; }
+  .win2-desktop-icon-art { width: 36px; height: 36px; }
+  .win2-desktop-icon-art svg { width: 31px; height: 31px; }
+  .win2-taskbar > div:first-child { max-width: calc(100% - 100px); }
+  .win2-taskbar > button[aria-label="Quick settings"], .win2-taskbar > div:nth-last-child(2) { display: none; }
+  .win2-explorer { grid-template-columns: 52px minmax(0,1fr); }
+  .win2-explorer > aside { padding-inline: 4px; font-size: 0; }
+  .win2-explorer > aside strong, .win2-explorer > aside button { justify-content: center; padding-inline: 4px; font-size: 0; }
+  .win2-explorer > aside > span { display: none; }
+  .win2-folder-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .win2-explorer-command button:nth-of-type(n+3) { display: none; }
+  .win2-explorer-content { padding: 12px; }
+  .windows2-desktop .windows-custom-shortcuts { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .windows2-desktop *, .windows2-desktop *::before { animation: none !important; transition: none !important; } }
