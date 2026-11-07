@@ -210,6 +210,17 @@ function apply() {
   r.dataset["sidebarWidth"] = look.sidebarWidth;
   r.dataset["wallpaperMotion"] = look.wallpaperMotion;
   r.dataset["appTransparency"] = look.appTransparency;
+  r.dataset["appIconShape"] = look.appIconShape;
+  r.dataset["appLogoStyle"] = look.appLogoStyle;
+  r.dataset["appArrangement"] = look.appArrangement;
+  r.dataset["taskbarPosition"] = look.taskbarPosition;
+  r.dataset["taskbarAlignment"] = look.taskbarAlignment;
+  r.dataset["fontFamily"] = look.fontFamily;
+  r.dataset["wallpaperOverlay"] = look.wallpaperOverlay;
+  const fontFamilies: Record<AppearanceProfile["fontFamily"], string> = { native: "", clean: "var(--font-sans)", rounded: '"Outfit", var(--font-sans)', serif: "var(--font-display)", mono: "var(--font-mono)" };
+  const fontFamily = fontFamilies[look.fontFamily];
+  if (fontFamily) r.style.setProperty("--appearance-font", fontFamily); else r.style.removeProperty("--appearance-font");
+  r.style.setProperty("--wallpaper-overlay-blur", `${Math.round(look.customBgDim / 6)}px`);
   r.dataset["dockMotion"] = look.dockMotion === false ? "off" : "on";
   r.dataset["iconLabels"] = look.iconLabels === false ? "off" : "on";
   r.style.setProperty("--appearance-brightness", `${(look.brightness ?? 100) / 100}`);

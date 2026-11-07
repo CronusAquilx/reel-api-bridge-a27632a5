@@ -13,6 +13,13 @@ export type AppearanceProfile = Pick<Prefs, "palette" | "accent" | "fontScale" |
   particles: "off" | "stars" | "rain" | "snow" | "fireflies";
   particleDensity: "subtle" | "rich";
   appTransparency: "solid" | "glass" | "liquid";
+  appIconShape: "native" | "circle" | "rounded" | "square" | "rectangle" | "liquid";
+  appLogoStyle: "color" | "monochrome" | "outline";
+  appArrangement: "native" | "shelf" | "grid" | "list";
+  taskbarPosition: "native" | "bottom" | "top" | "left" | "right";
+  taskbarAlignment: "native" | "start" | "center" | "end";
+  fontFamily: "native" | "clean" | "rounded" | "serif" | "mono";
+  wallpaperOverlay: "native" | "none" | "black" | "gradient" | "frosted";
   glassOpacity?: number;
   glassBlur?: number;
   brightness?: number;
