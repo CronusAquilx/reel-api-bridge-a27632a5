@@ -13,11 +13,11 @@ export function AppearancePreview({ layout, look }: { layout: AppearanceLayout; 
   const consoleMode = ["sony", "series", "wii", "neutral"].includes(layout);
   const src = (consoleMode ? look.consoleCustomBg : look.customBg) || (consoleMode ? consoleWallpaper : desktopWallpaper);
   const style = { "--star": look.customAccent || ACCENTS[look.accent] || "var(--primary)", "--preview-brightness": (look.brightness ?? 100) / 100, "--glass-opacity": `${look.glassOpacity ?? 65}%`, "--glass-blur": `${look.glassBlur ?? 24}px`, "--preview-overlay": `${look.customBgDim}%`, "--preview-overlay-blur": `${Math.round(look.customBgDim / 6)}px` } as CSSProperties;
-  return <div className="personalization-preview" style={style} data-mode={look.mode} data-pattern={look.background} data-surface={look.appTransparency} data-layout={layout} role="img" aria-label={`${LAYOUT_NAMES[layout]} personalization preview`}>
+  return <div className="personalization-preview" style={style} data-mode={look.mode} data-pattern={look.background} data-surface={look.appTransparency} data-layout={layout} data-icon-shape={look.appIconShape} data-logo-style={look.appLogoStyle} data-arrangement={look.appArrangement} data-taskbar-position={look.taskbarPosition} data-font={look.fontFamily} data-overlay={look.wallpaperOverlay} data-icon-size={look.tileSize} role="img" aria-label={`${LAYOUT_NAMES[layout]} personalization preview`}>
     {look.artwork && <WallpaperMedia src={src} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="personalization-preview-wallpaper"/>}
-    <div className="personalization-preview-pattern"/><WallpaperEffects appearance={look}/>
+    <div className="personalization-preview-overlay"/><div className="personalization-preview-pattern"/><WallpaperEffects appearance={look}/>
     <div className="personalization-preview-label">{LAYOUT_NAMES[layout]}</div>
     {look.showClock && <div className="personalization-preview-clock" data-clock-font={look.clockFont}><strong>{now?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", ...(look.clockSeconds ? { second: "2-digit" } : {}), hour12: !look.clock24Hour }) ?? "12:00"}</strong>{look.clockStyle !== "minimal" && <span>{now?.toLocaleDateString([], { weekday: "long" }) ?? "Monday"}</span>}{look.clockDate !== false && <small>{now?.toLocaleDateString([], { month: "long", day: "numeric" }) ?? "November 2"}</small>}</div>}
-    <div className="personalization-preview-dock">{[Gamepad2, Film, Music, Settings].map((Icon, i) => <span key={i}><Icon/></span>)}</div>
+    <div className="personalization-preview-dock">{[Gamepad2, Film, Music, Settings].map((Icon, i) => <span key={i} className="personalization-preview-app-icon"><Icon/></span>)}</div>
   </div>;
 }
