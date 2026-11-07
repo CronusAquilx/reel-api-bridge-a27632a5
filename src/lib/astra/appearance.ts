@@ -13,6 +13,13 @@ export type AppearanceProfile = Pick<Prefs, "palette" | "accent" | "fontScale" |
   particles: "off" | "stars" | "rain" | "snow" | "fireflies";
   particleDensity: "subtle" | "rich";
   appTransparency: "solid" | "glass" | "liquid";
+  appIconShape: "native" | "circle" | "rounded" | "square" | "rectangle" | "liquid";
+  appLogoStyle: "color" | "monochrome" | "outline";
+  appArrangement: "native" | "shelf" | "grid" | "list";
+  taskbarPosition: "native" | "bottom" | "top" | "left" | "right";
+  taskbarAlignment: "native" | "start" | "center" | "end";
+  fontFamily: "native" | "clean" | "rounded" | "serif" | "mono";
+  wallpaperOverlay: "native" | "none" | "black" | "gradient" | "frosted";
   glassOpacity?: number;
   glassBlur?: number;
   brightness?: number;
@@ -37,7 +44,7 @@ export function activeLayout(p: Pick<Prefs, "console" | "layout">): AppearanceLa
   return p.console !== "off" && p.console !== "classic" ? p.console : p.layout;
 }
 export function initialAppearance(p: Prefs, mode: "dark" | "light" = "dark"): AppearanceProfile {
-  return { palette: p.palette, accent: p.accent, fontScale: p.fontScale, radius: p.radius, density: p.density, background: p.background, reduceMotion: p.reduceMotion, showClock: p.showClock, consoleBg: p.consoleBg, consoleCustomBg: p.consoleCustomBg, customBg: p.customBg, customBgDim: p.customBgDim, mode, tileSize: "standard", artwork: true, sidebarWidth: "standard", wallpaperMotion: "off", particles: "off", particleDensity: "subtle", appTransparency: "solid", clockFont: "clean", liveWallpaper: "off", customAccent: "", widgets: { weather: true, notes: true, music: true } };
+  return { palette: p.palette, accent: p.accent, fontScale: p.fontScale, radius: p.radius, density: p.density, background: p.background, reduceMotion: p.reduceMotion, showClock: p.showClock, consoleBg: p.consoleBg, consoleCustomBg: p.consoleCustomBg, customBg: p.customBg, customBgDim: p.customBgDim, mode, tileSize: "standard", artwork: true, sidebarWidth: "standard", wallpaperMotion: "off", particles: "off", particleDensity: "subtle", appTransparency: "solid", appIconShape: "native", appLogoStyle: "color", appArrangement: "native", taskbarPosition: "native", taskbarAlignment: "native", fontFamily: "native", wallpaperOverlay: "native", clockFont: "clean", liveWallpaper: "off", customAccent: "", widgets: { weather: true, notes: true, music: true } };
 }
 export function updateAppearance(profiles: AppearanceProfiles, layout: AppearanceLayout, current: AppearanceProfile, patch: Partial<AppearanceProfile>): AppearanceProfiles {
   return { ...profiles, [layout]: { ...current, ...patch } };

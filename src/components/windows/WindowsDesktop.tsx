@@ -125,6 +125,9 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
   const modernIcon = (id: string, title: string, icon: ReactNode, launch: () => void, item?: DesktopItem) => <Button key={id} data-win2-icon={id} data-selected={selectedIcons.includes(id)} variant="ghost" className="windows-shortcut win2-desktop-icon" aria-label={`Open ${title}`} aria-pressed={selectedIcons.includes(id)} onClick={() => setSelectedIcons([id])} onDoubleClick={launch} onKeyDown={event => { if (event.key === "Enter") launch(); }} onContextMenu={event => showContext(event, item?.id)}><span className="win2-desktop-icon-art">{icon}</span><span>{title}</span></Button>;
   const beginSelection = (event: ReactPointerEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
+    // React portal events bubble through this component even when their DOM is outside the workspace.
+    // Never turn a Settings dropdown click into desktop drag selection or capture its pointer.
+    if (!event.currentTarget.contains(target)) return;
     if (target.closest("button,input,textarea,.windows-window,.desktop-widget-panel")) { setContextMenu(null); return; }
     setStart(false); setQuick(false); setTasks(false); setContextMenu(null); setSelectedIcons([]);
     if (!modern || event.button !== 0) return;
@@ -151,6 +154,7 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
   };
   return <div data-full-window={fullWindow} className={cn("windows-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground", modern && "windows2-desktop")}>
     {look.artwork && <WallpaperMedia src={look.customBg || (modern ? windows2Wallpaper : wallpaper)} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="windows-wallpaper absolute inset-0 size-full object-cover"/>}
+    <div className="appearance-wallpaper-overlay"/>
     <WallpaperEffects/>
     {!modern && <DesktopStatusBar onApps={() => { setStart(!start); setQuick(false); }} onSettings={() => { setQuick(!quick); setStart(false); }}/>}
     <div ref={workspace} data-icon-size={iconSize} className="windows-workspace relative min-h-0 flex-1" onPointerDown={beginSelection} onPointerMove={moveSelection} onPointerUp={finishSelection} onPointerCancel={finishSelection} onContextMenu={event => { if (!modern || (event.target as HTMLElement).closest(".windows-window,.desktop-widget-panel")) return; showContext(event); }}>

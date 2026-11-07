@@ -36,6 +36,21 @@ describe("layout personalization", () => {
     expect(saved.launcher?.palette).toBe("arctic");
     expect(saved.classic?.mode).toBe("dark");
   });
+  it("keeps app shapes, fonts and wallpaper overlays independent for every visible layout", () => {
+    const original = initialAppearance(DEFAULT_PREFS);
+    let profiles = Object.fromEntries(["sony", "series", "wii", "neutral", "windows", "windows2", "macos", "ipad", "switch"].map(layout => [layout, original]));
+    profiles = updateAppearance(profiles, "sony", original, { appIconShape: "circle", appLogoStyle: "outline", appArrangement: "list", fontFamily: "serif", wallpaperOverlay: "black" });
+    expect(profiles["sony"]).toMatchObject({ appIconShape: "circle", appLogoStyle: "outline", appArrangement: "list", fontFamily: "serif", wallpaperOverlay: "black" });
+    for (const layout of ["series", "wii", "neutral", "windows", "windows2", "macos", "ipad", "switch"] as const) {
+      expect(profiles[layout]).toMatchObject({ appIconShape: "native", appLogoStyle: "color", appArrangement: "native", fontFamily: "native", wallpaperOverlay: "native" });
+    }
+  });
+  it("keeps taskbar placement and alignment separate between both Windows layouts", () => {
+    const original = initialAppearance(DEFAULT_PREFS);
+    const profiles = updateAppearance({ windows: original, windows2: original }, "windows2", original, { taskbarPosition: "left", taskbarAlignment: "start", tileSize: "large" });
+    expect(profiles.windows2).toMatchObject({ taskbarPosition: "left", taskbarAlignment: "start", tileSize: "large" });
+    expect(profiles.windows).toMatchObject({ taskbarPosition: "native", taskbarAlignment: "native", tileSize: "standard" });
+  });
   it("selects each active layout's own appearance", () => {
     expect(activeLayout({ console: "sony", layout: "classic" })).toBe("sony");
     expect(activeLayout({ console: "series", layout: "launcher" })).toBe("series");

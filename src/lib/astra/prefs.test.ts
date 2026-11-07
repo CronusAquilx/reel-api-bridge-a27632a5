@@ -85,6 +85,18 @@ describe("persisted appearance switching", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
     expect(document.documentElement.style.fontSize).toBe("95%");
   });
+  it("restores layout-specific app, font, overlay and taskbar choices", () => {
+    resetPrefs(); setPrefs({ console: "off", layout: "windows2" });
+    setAppearance("windows2", { appIconShape: "rectangle", appLogoStyle: "monochrome", appArrangement: "grid", fontFamily: "rounded", wallpaperOverlay: "gradient", taskbarPosition: "right", taskbarAlignment: "end" });
+    setPrefs({ layout: "macos" });
+    setAppearance("macos", { appIconShape: "liquid", fontFamily: "serif", taskbarPosition: "left" });
+    setPrefs({ layout: "windows2" });
+    const root = document.documentElement;
+    expect(root.dataset).toMatchObject({ appIconShape: "rectangle", appLogoStyle: "monochrome", appArrangement: "grid", fontFamily: "rounded", wallpaperOverlay: "gradient", taskbarPosition: "right", taskbarAlignment: "end" });
+    expect(root.style.getPropertyValue("--appearance-font")).toBe('"Outfit", var(--font-sans)');
+    const saved = JSON.parse(localStorage.getItem("astra-prefs") || "{}");
+    expect(saved.appearances.macos).toMatchObject({ appIconShape: "liquid", fontFamily: "serif", taskbarPosition: "left" });
+  });
   it("editing an inactive layout does not change the current look", () => {
     resetPrefs();
     setPrefs({ console: "off", layout: "classic" });
