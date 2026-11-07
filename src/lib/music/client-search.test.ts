@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { PIPED_SEARCH_HOSTS, SEARCH_TIMEOUT_MS, searchMusic, videoId } from "./client-search";
+import { findFullSongs } from "./full-song.functions";
+vi.mock("./full-song.functions", () => ({ findFullSongs: vi.fn() }));
 
 describe("client music rules", () => {
   it("uses the four requested search hosts in order", () => {
@@ -16,6 +18,18 @@ describe("client music rules", () => {
   it("does not search for an empty query", async () => {
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
     try { expect(await searchMusic("", new AbortController().signal)).toEqual([]); expect(fetcher).not.toHaveBeenCalled(); }
+    finally { vi.unstubAllGlobals(); }
+  });
+  it("returns full YouTube songs instead of previews when Piped is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Offline")));
+    vi.mocked(findFullSongs).mockResolvedValueOnce([{ id: "abcdefghijk", title: "Full song", artist: "Artist", art: "", duration: 240, source: "piped", artistId: "", album: "", albumId: "" }]);
+    try { const rows = await searchMusic("full song", new AbortController().signal, true); expect(rows[0]?.duration).toBe(240); expect(rows[0]?.preview).toBeUndefined(); }
+    finally { vi.unstubAllGlobals(); }
+  });
+  it("never starts a preview from a full-only search", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Offline")));
+    vi.mocked(findFullSongs).mockResolvedValueOnce([]);
+    try { expect(await searchMusic("song", new AbortController().signal, true)).toEqual([]); }
     finally { vi.unstubAllGlobals(); }
   });
 });
