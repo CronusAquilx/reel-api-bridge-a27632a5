@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openProxied } from "@/lib/astra/proxy";
 import type { Prefs } from "@/lib/astra/prefs";
 import { nextQueueIndex } from "./qaisify";
+import { searchMusic, searchPreviews } from "./client-search";
 
 export type Track = { id: string; title: string; artist: string; artistId: string; album: string; albumId: string; art: string; duration: number; preview?: string; source?: "piped" | "itunes" };
 export const SERVERS = [
@@ -29,6 +30,9 @@ let candidates: string[] = [];
 let candidateIndex = 0;
 let ytGeneration = 0;
 let poll: ReturnType<typeof setInterval> | null = null;
+let playbackRequest: AbortController | null = null;
+let playbackWatchdog: ReturnType<typeof setTimeout> | null = null;
+function cancelPlaybackRequest() { playbackRequest?.abort(); if (playbackWatchdog) clearTimeout(playbackWatchdog); playbackWatchdog = null; }
 
 export async function musicToken() { const { data } = await supabase.auth.getSession(); token = data.session?.access_token ?? "guest"; return token; }
 export const artUrl = (src: string) => src && token && /^https:\/\/([a-z0-9-]+\.)*(dzcdn\.net|deezer\.com|mzstatic\.com)\//i.test(src) ? `/api/music?op=art&src=${encodeURIComponent(src)}&token=${encodeURIComponent(token)}` : src;
@@ -70,8 +74,15 @@ function youtubePlayer(): Promise<YTPlayer> {
         },
         onError: (event: { data: number }) => {
           if (state.mode !== "video" || ytGeneration !== playId) return;
-          if (event.data !== 153 && candidates[candidateIndex + 1] && yt) { candidateIndex++; yt.loadVideoById(candidates[candidateIndex] ?? ""); set({ loading: true, status: "Trying another verified video…" }); }
-          else { stopPolling(); const t = state.queue[state.cur]; set({ mode: null, fallbackId: candidates[0] ?? null, status: "Video blocked — switching to audio…" }); if (t) void proxyOrAudio(t, playId); }
+          const t = state.queue[state.cur];
+          if (event.data === 100 && candidates[candidateIndex + 1] && yt) {
+            candidateIndex++; yt.loadVideoById(candidates[candidateIndex] ?? "");
+            set({ loading: true, status: "Trying the next result…" });
+          } else if (t) {
+            stopPolling(); yt?.stopVideo();
+            set({ mode: null, status: "Couldn't play that one — trying a preview…" });
+            void audioFallback(t, playId);
+          }
         },
       } });
     };
@@ -102,66 +113,53 @@ export function addToQueue(t: Track) { set({ queue: [...state.queue, t] }); }
 export function removeFromQueue(i: number) { if (i === state.cur) return; set({ queue: state.queue.filter((_, n) => i !== n), cur: i < state.cur ? state.cur - 1 : state.cur }); }
 export async function playList(list: Track[], i: number) {
   ensure(); const t = list[i]; if (!t || !audio) return;
-  const my = ++playId; clearProxy(); stopPolling(); audio.pause(); audio.removeAttribute("src"); yt?.stopVideo();
+  cancelPlaybackRequest(); playbackRequest = new AbortController();
+  const signal = playbackRequest.signal;
+  const my = ++playId; clearProxy(); stopPolling(); audio.pause(); audio.removeAttribute("src"); audio.load(); yt?.stopVideo();
+  candidates = []; candidateIndex = 0;
   set({ queue: list, cur: i, status: "Finding your song…", paused: true, loading: true, time: 0, dur: t.duration, mode: null, fallbackId: null });
   audio.playbackRate = state.speed;
-  const want = { q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist, duration: String(t.duration || 0), preview: t.preview ?? "" };
-  if ("mediaSession" in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: t.album, artwork: t.art ? [{ src: t.art }] : [] });
-  if (state.server !== "youtube") {
-    try {
-      const r = await musicApi<{ url: string | null; server?: string }>({ op: "resolve", server: state.server, ...want });
-      if (my !== playId) return;
-      if (r.url && audio) { audio.src = `/api/music?op=audio&u=${encodeURIComponent(r.url)}&token=${encodeURIComponent(token)}`; set({ mode: "audio", status: state.server === "deezer" ? "30-second preview" : (r.server ?? state.server) }); await audio.play(); if (my === playId) set({ loading: false, paused: false }); return; }
-    } catch { /* YouTube is the next explicit fallback, not another slow source chain. */ }
-  }
-  const ready = youtubePlayer().catch(() => null);
+  if (t.preview) { await audioFallback(t, my); return; }
   try {
-    const result = await musicApi<{ ids: string[]; error?: string }>({ op: "video", q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist });
-    if (my !== playId) return;
-    const first = result.ids[0];
-    if (!first) { set({ status: "Switching to audio…" }); void audioFallback(t, my); return; }
-    candidates = result.ids;
-    const player = await ready;
-    if (my !== playId) return;
-    if (!player) { set({ loading: false, paused: true, fallbackId: first, status: "YouTube controls unavailable — open player" }); return; }
-    candidates = result.ids; candidateIndex = 0; ytGeneration = my;
-    set({ mode: "video", status: "Starting YouTube…" }); player.loadVideoById(first); player.setVolume(state.volume * 100); player.setPlaybackRate?.(state.speed); player.playVideo();
-    const watchdog = (index: number) => setTimeout(() => { if (my !== playId || !state.loading || candidateIndex !== index) return; const nextId = candidates[index + 1]; if (nextId && yt) { candidateIndex = index + 1; yt.loadVideoById(nextId); set({ status: "Trying another video…" }); watchdog(index + 1); } else void proxyOrAudio(t, my); }, 7000);
-    watchdog(0);
-    const upcoming = list[i + 1]; if (upcoming) void musicApi({ op: "video", q: `${upcoming.artist} ${upcoming.title}`, title: upcoming.title, artist: upcoming.artist }).catch(() => {});
-  } catch (e) { if (my === playId) set({ loading: false, paused: true, status: e instanceof Error ? e.message : "Song unavailable" }); }
+    const results = t.source === "piped" && /^[\w-]{11}$/.test(t.id) ? list.filter(row => row.source === "piped" && /^[\w-]{11}$/.test(row.id)).slice(list.slice(0, i).filter(row => row.source === "piped").length) : await searchMusic(`${t.artist} ${t.title}`, signal);
+    if (my !== playId || signal.aborted) return;
+    const first = results[0];
+    if (!first) { await audioFallback(t, my); return; }
+    if (first.preview) { await audioFallback({ ...t, preview: first.preview }, my); return; }
+    candidates = results.map(row => row.id); candidateIndex = 0;
+    const player = await youtubePlayer();
+    if (my !== playId || signal.aborted) return;
+    ytGeneration = my;
+    set({ mode: "video", status: "Starting YouTube…" });
+    player.loadVideoById(first.id); player.setVolume(state.volume * 100); player.setPlaybackRate?.(state.speed);
+    playbackWatchdog = setTimeout(() => { if (my === playId && state.loading && state.mode === "video") { player.stopVideo(); void audioFallback(t, my); } }, 12000);
+  } catch { if (my === playId && !signal.aborted) await audioFallback(t, my); }
 }
 let proxyFrame: HTMLIFrameElement | null = null;
 function clearProxy() { proxyFrame?.remove(); proxyFrame = null; if (typeof document !== "undefined") document.querySelectorAll<HTMLElement>(".qaisify-playback-host").forEach(el => { el.style.visibility = ""; }); }
 // Blocked YouTube embeds go straight to server-fetched audio (network restrictions only block the YouTube player).
-function proxyOrAudio(t: Track, my: number) { clearProxy(); return audioFallback(t, my); }
 async function audioFallback(t: Track, my: number) {
   ensure();
-  const startAudio = async (url: string, label: string) => {
-    if (my !== playId || !audio) return;
-    audio.src = `/api/music?op=audio&u=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`;
-    set({ mode: "audio", status: label });
+  if (my !== playId || !audio || !playbackRequest || playbackRequest.signal.aborted) return;
+  stopPolling(); yt?.stopVideo();
+  if (playbackWatchdog) clearTimeout(playbackWatchdog);
+  try {
+    const preview = t.preview ? t : (await searchPreviews(`${t.artist} ${t.title}`, playbackRequest.signal))[0];
+    if (my !== playId || playbackRequest.signal.aborted || !audio) return;
+    if (!preview?.preview) throw new Error("Unavailable");
+    audio.src = preview.preview;
+    set({ mode: "audio", dur: 30, status: "30s preview" });
     await audio.play();
     if (my === playId) set({ loading: false, paused: false });
-  };
-  try {
-    const r = await musicApi<{ url: string | null; server?: string }>({ op: "resolve", server: "auto", q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist, duration: String(t.duration || 0), preview: t.preview ?? "" });
-    if (r.url) { await startAudio(r.url, r.server ?? "Audio"); return; }
-  } catch { /* try the verified store preview below */ }
-  if (my !== playId) return;
-  if (t.preview) {
-    try {
-      const r = await musicApi<{ url: string | null }>({ op: "resolve", server: t.source === "itunes" ? "itunes" : "deezer", q: `${t.artist} ${t.title}`, title: t.title, artist: t.artist, preview: t.preview });
-      if (r.url) { await startAudio(r.url, "30-second preview · full video unavailable"); return; }
-    } catch { /* show the remaining YouTube action below */ }
+  } catch {
+    if (my === playId) set({ mode: null, loading: false, paused: true, fallbackId: null, status: "Couldn't play that one" });
   }
-  if (my === playId) set({ loading: false, paused: true, fallbackId: candidates[candidateIndex] ?? null, status: "Couldn't start audio — try another song" });
 }
 export function toggle() { ensure(); if (proxyFrame) { clearProxy(); set({ paused: true }); return; } if (state.mode === "audio" && audio?.src) { if (audio.paused) void audio.play().catch(() => set({ status: "Press play again", loading: false })); else audio.pause(); } else if (state.mode === "video" && yt) { if (state.paused) yt.playVideo(); else yt.pauseVideo(); } else if (state.cur >= 0) void playList(state.queue, state.cur); }
 export function next() { const index = nextQueueIndex(state.cur, state.queue.length, state.repeat, state.shuffle); if (index >= 0) void playList(state.queue, index); else { audio?.pause(); yt?.pauseVideo(); stopPolling(); set({ paused: true, loading: false }); } }
 export function prev() { if (state.time > 3) { seek(0); return; } void playList(state.queue, Math.max(0, state.cur - 1)); }
 export function seek(t: number) { const time = Math.max(0, Math.min(t, state.dur)); if (state.mode === "audio" && audio) audio.currentTime = time; if (state.mode === "video") yt?.seekTo(time, true); set({ time }); }
-export function stop() { playId++; clearProxy(); audio?.pause(); yt?.stopVideo(); stopPolling(); set({ cur: -1, queue: [], mode: null, paused: true, loading: false, fallbackId: null }); }
+export function stop() { cancelPlaybackRequest(); playId++; clearProxy(); audio?.pause(); yt?.stopVideo(); stopPolling(); set({ cur: -1, queue: [], mode: null, paused: true, loading: false, fallbackId: null }); }
 export function getAudio() { ensure(); return audio; }
 export function getPlayer() { return state; }
 export async function openMusicProxy(iframe: HTMLIFrameElement) { const t = state.queue[state.cur]; const videoId = state.fallbackId ?? candidates[candidateIndex]; if (!prefsRef || !t || !videoId) return; yt?.pauseVideo(); set({ paused: true, mode: null }); await openProxied(iframe, `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`, prefsRef); }

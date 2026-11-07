@@ -42,8 +42,8 @@
 - Windows consolidates legacy desktop choices via prefs-load migration, preserving wallpapers; legacy profiles stay archived. DesktopSurface/AppIcon and StoreView reuse existing apps.
 - App-specific navigation lives in shared views with skin-scoped native-app styling; wallpaper effects mount once per desktop/console shell and obey motion/performance preferences to preserve playback and gameplay isolation.
 - Developer-added games use a shared authenticated catalog protected by server role checks and database policies; arbitrary cloud URLs use the existing full proxy fallback, while arcade URLs reuse the inline player with proxied navigation.
-- Music shares a player and iTunes IDs; server-only GOOGLE_API_KEY overrides the YouTube connector for workspace moves. Piped keeps /api/music failover and playlists/widgets.
-- Qaisify navigation and settings adapt into the shared MusicView and player, never mount a second router/player; theme selection stays in shared prefs and catalog searches isolate optional lookup failures so songs remain available.
+- Music uses client-side sequential Piped search and Apple/Deezer JSONP previews through the existing shared player; all layouts reuse MusicPlayback, so playback needs no music authentication or server API key.
+- MusicView re-exports the shared MusicPlayback component; shell-level NowPlayingBar owns persistent controls and theme selection stays in shared preferences to avoid duplicate players.
 - Movie voice search verifies tracks, retries once per source and respects manual playback; all animation can confirm MAL/AniList dub entries, while Anikoto opens its real search through the proxy, not a guessed embed API.
 - Switch composes existing routes. Desktop widgets use bounded Rnd geometry in appearance profiles, shared music/Open-Meteo and per-user local notes; guest notes stay in memory.
 - Wallpapers use owner-only backgrounds storage and per-layout prefs; guest images use temporary object URLs. Custom accents use shared CSS tokens.
