@@ -1,5 +1,10 @@
 # Birchbeat import roadmap
 
+## Current request — client-side key-free Music
+- [ ] Replace mock Music views with one shared runtime search tab.
+- [ ] Use sequential Piped searches, Apple/Deezer JSONP previews and one persistent player with graceful errors.
+- [ ] Perform only focused rule checks; no broad testing or new dependencies.
+
 ## Current request — visible Music playback controls
 - [x] Reproduce song playback in a maximized Music window and identify the hidden shared player bar.
 - [x] Keep playback and queue controls visible in maximized windows; verified One More Time plays, advances and shows its controls through the real interface.
