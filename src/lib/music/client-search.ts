@@ -1,4 +1,5 @@
 import type { Track } from "./player";
+import { findFullSongs } from "./full-song.functions";
 
 export const PIPED_SEARCH_HOSTS = ["https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://api.piped.private.coffee", "https://pipedapi.drgns.space"];
 export const SEARCH_TIMEOUT_MS = 4000;
@@ -38,7 +39,7 @@ export async function searchPreviews(query: string, signal: AbortSignal): Promis
     return (Array.isArray(data.data) ? data.data : []).filter((r: any) => typeof r.preview === "string" && r.preview).map((r: any) => track(String(r.id), r.title, r.artist?.name ?? "", r.album?.cover_medium ?? "", r.preview, 30, undefined));
   } catch { return []; }
 }
-export async function searchMusic(query: string, signal: AbortSignal): Promise<Track[]> {
+export async function searchMusic(query: string, signal: AbortSignal, fullOnly = false): Promise<Track[]> {
   if (!query.trim() || signal.aborted) return [];
   for (const host of PIPED_SEARCH_HOSTS) {
     if (signal.aborted) return [];
@@ -58,5 +59,11 @@ export async function searchMusic(query: string, signal: AbortSignal): Promise<T
     } catch { /* Continue to the next independent host. */ }
     finally { clearTimeout(timer); signal.removeEventListener("abort", abort); }
   }
-  return signal.aborted ? [] : searchPreviews(query, signal);
+  if (signal.aborted) return [];
+  try {
+    const songs = await findFullSongs({ data: { query: query.slice(0, 200) }, signal });
+    if (signal.aborted) return [];
+    if (songs.length) return songs;
+  } catch { if (signal.aborted) return []; }
+  return signal.aborted || fullOnly ? [] : searchPreviews(query, signal);
 }

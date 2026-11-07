@@ -1,5 +1,10 @@
 # Birchbeat import roadmap
 
+## Current request — full songs and previous Music interface
+- [ ] Restore Qaisify navigation, artwork cards, library, liked songs, stats and settings without restoring old sources.
+- [ ] Resolve full YouTube tracks before using labeled previews, including searches when Piped is unavailable.
+- [ ] Run focused music checks only and inspect automatic compilation.
+
 ## Current request — client-side key-free Music
 - [x] Replace mock Music views with one shared runtime search tab across existing Music entry points.
 - [x] Use sequential Piped searches, Apple/Deezer JSONP previews and the existing persistent player with graceful errors and cancellable requests.
