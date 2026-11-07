@@ -44,6 +44,7 @@
 - Developer-added games use a shared authenticated catalog protected by server role checks and database policies; arbitrary cloud URLs use the existing full proxy fallback, while arcade URLs reuse the inline player with proxied navigation.
 - Music uses sequential Piped search with public key-free YouTube metadata lookup when unavailable; the shared player resolves full songs before Apple/Deezer previews, avoiding music authentication and server API keys.
 - MusicView re-exports the shared MusicPlayback component; shell-level NowPlayingBar owns persistent controls and theme selection stays in shared preferences to avoid duplicate players.
+- Each music playback attempt owns a fresh YouTube player and guarded callbacks; bounded recovery cannot affect a later track, and the video surface stays outside the visible interface.
 - Movie voice search verifies tracks, retries once per source and respects manual playback; all animation can confirm MAL/AniList dub entries, while Anikoto opens its real search through the proxy, not a guessed embed API.
 - Switch composes existing routes. Desktop widgets use bounded Rnd geometry in appearance profiles, shared music/Open-Meteo and per-user local notes; guest notes stay in memory.
 - Wallpapers use owner-only backgrounds storage and per-layout prefs; guest images use temporary object URLs. Custom accents use shared CSS tokens.
