@@ -1,9 +1,9 @@
 # Birchbeat import roadmap
 
 ## Current request — client-side key-free Music
-- [ ] Replace mock Music views with one shared runtime search tab.
-- [ ] Use sequential Piped searches, Apple/Deezer JSONP previews and one persistent player with graceful errors.
-- [ ] Perform only focused rule checks; no broad testing or new dependencies.
+- [x] Replace mock Music views with one shared runtime search tab across existing Music entry points.
+- [x] Use sequential Piped searches, Apple/Deezer JSONP previews and the existing persistent player with graceful errors and cancellable requests.
+- [x] Ten focused music rule checks passed and automatic preview compilation is clean; no new dependencies or broad testing. Live provider playback remains user-tested.
 
 ## Current request — visible Music playback controls
 - [x] Reproduce song playback in a maximized Music window and identify the hidden shared player bar.
