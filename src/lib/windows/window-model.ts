@@ -1,5 +1,5 @@
 export type DesktopApp = "home" | "games" | "music" | "movies" | "web" | "chat" | "memory" | "voice" | "settings" | "social" | "store" | "route" | `tool:${string}`;
-export type WindowTab = { id: string; app: DesktopApp; title: string; game?: import("./desktop-shortcuts").ArcadeShortcutGame };
+export type WindowTab = { id: string; app: DesktopApp; title: string; game?: import("./desktop-shortcuts").ArcadeShortcutGame; itemId?: string };
 export type DesktopWindow = { id: string; tabs: WindowTab[]; activeTab: string; x: number; y: number; width: number; height: number; minimized: boolean; mode: "normal" | "maximized" | "left" | "right" };
 export type DesktopState = { windows: DesktopWindow[]; active: string | null };
 export type WindowAction =

@@ -155,7 +155,7 @@ function Library({ initialGame }: { initialGame?: ArcadeShortcutGame | undefined
                     <img src={g.url ? siteThumbnail(g.url) : `/api/public/games/cover/${g.cover}`} alt={g.name} loading="lazy" decoding="async" className="aspect-square w-full bg-muted object-cover" />
                     <p className="truncate px-2 py-1.5 text-sm">{g.name}</p>
                   </button>
-                  {prefs.layout === "windows" && prefs.console === "off" && <Button variant="secondary" size="icon" className="absolute bottom-9 left-1 size-7" title="Add to desktop" aria-label={`Add ${g.name} to desktop`} onClick={() => { addDesktopShortcut({ id: `arcade:${g.file}`, kind: "arcade", title: g.name, game: g, image: g.url ? siteThumbnail(g.url) : `/api/public/games/cover/${g.cover}` }); toast("Added to desktop"); }}><SquarePlus className="size-4"/></Button>}
+                  {(prefs.layout === "windows" || prefs.layout === "windows2") && prefs.console === "off" && <Button variant="secondary" size="icon" className="absolute bottom-9 left-1 size-7" title="Add to desktop" aria-label={`Add ${g.name} to desktop`} onClick={() => { addDesktopShortcut({ id: `arcade:${g.file}`, kind: "arcade", title: g.name, game: g, image: g.url ? siteThumbnail(g.url) : `/api/public/games/cover/${g.cover}` }); toast("Added to desktop"); }}><SquarePlus className="size-4"/></Button>}
                   <button onClick={() => toggleFavorite(g.name)} aria-label={fav ? "Remove from favorites" : "Add to favorites"}
                     className={`absolute right-1.5 top-1.5 rounded-full bg-background/80 p-1.5 backdrop-blur transition-opacity ${fav ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}>
                     <Heart className={`size-4 ${fav ? "fill-primary text-primary" : ""}`} />
@@ -256,7 +256,7 @@ function CloudGrid({ list, note }: { list: readonly { name: string; url: string 
             </div>
             <div className="space-y-3 p-5">
               <h2 className="text-lg font-semibold">{game.name}</h2>
-              {prefs.layout === "windows" && prefs.console === "off" && <Button variant="secondary" onClick={() => { addDesktopShortcut({ id: `cloud:${game.url}`, kind: "cloud", title: game.name, url: game.url, image: siteThumbnail(game.url) }); toast("Added to desktop"); }}><SquarePlus/>Add to desktop</Button>}
+              {(prefs.layout === "windows" || prefs.layout === "windows2") && prefs.console === "off" && <Button variant="secondary" onClick={() => { addDesktopShortcut({ id: `cloud:${game.url}`, kind: "cloud", title: game.name, url: game.url, image: siteThumbnail(game.url) }); toast("Added to desktop"); }}><SquarePlus/>Add to desktop</Button>}
               <a href={`/play?url=${encodeURIComponent(game.url)}&name=${encodeURIComponent(game.name)}`} target="_blank" rel="noopener" className="block rounded-md bg-primary px-4 py-2.5 text-center font-medium text-primary-foreground hover:opacity-90">Play in new tab</a>
               <button onClick={() => setInline(true)} className="w-full rounded-md border px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Try inside Astra anyway (may not load)</button>
             </div>

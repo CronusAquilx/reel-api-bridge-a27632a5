@@ -13,7 +13,7 @@ type Line = { role: "user" | "assistant"; text: string };
 
 export function VoiceView() {
   const prefs = usePrefs();
-  const native = prefs.layout === "windows" || prefs.console === "sony" || prefs.console === "series";
+  const native = (prefs.layout === "windows" || prefs.layout === "windows2") || prefs.console === "sony" || prefs.console === "series";
   const [lines, setLines] = useState<Line[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
 

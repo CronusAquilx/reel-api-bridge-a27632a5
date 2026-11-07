@@ -13,7 +13,7 @@ import { usePrefs } from "@/lib/astra/prefs";
 
 export function MemoryView() {
   const prefs = usePrefs();
-  const native = prefs.layout === "windows" || prefs.console === "sony" || prefs.console === "series";
+  const native = (prefs.layout === "windows" || prefs.layout === "windows2") || prefs.console === "sony" || prefs.console === "series";
   const [filter, setFilter] = useState("");
   const { user } = useAuth();
   const qc = useQueryClient();

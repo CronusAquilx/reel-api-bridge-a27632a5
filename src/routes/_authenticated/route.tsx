@@ -30,7 +30,7 @@ function AuthedLayout() {
   // The full-tab game player shows only the game (no sidebar or welcome prompts).
   if (pathname === "/play" || pathname.startsWith("/console")) return isAccountOnlyPath(pathname) ? <AccountOnly><Outlet /></AccountOnly> : <Outlet />;
   if ((prefs.layout === "macos" || prefs.layout === "ipad") && prefs.console === "off") return <AppleDesktop key={prefs.layout} variant={prefs.layout}>{isAccountOnlyPath(pathname) ? <AccountOnly><Outlet /></AccountOnly> : <Outlet />}</AppleDesktop>;
-  if (prefs.layout === "windows" && prefs.console === "off") return <WindowsDesktop>{isAccountOnlyPath(pathname) ? <AccountOnly><Outlet /></AccountOnly> : <Outlet />}</WindowsDesktop>;
+  if ((prefs.layout === "windows" || prefs.layout === "windows2") && prefs.console === "off") return <WindowsDesktop modern={prefs.layout === "windows2"}>{isAccountOnlyPath(pathname) ? <AccountOnly><Outlet /></AccountOnly> : <Outlet />}</WindowsDesktop>;
   // In Console Mode, Music, Movies and AI open in the PS5 frame instead of the classic sidebar layout.
   if (prefs.console !== "off" && isConsoleMediaPath(pathname))
     return (

@@ -12,8 +12,8 @@ const apps = ["web", "music", "games", "movies", "settings"];
 
 /** Inert miniatures only: never mount another shell/player in the opening chooser. */
 export function LayoutPreview({ layout }: { layout: string }) {
-  const desktop = ["windows", "macos", "ipad"].includes(layout);
-  const wallpaper = layout === "windows" ? windows : layout === "macos" ? macos : layout === "ipad" ? ipad : landscape;
+  const desktop = ["windows", "windows2", "macos", "ipad"].includes(layout);
+  const wallpaper = layout === "windows" || layout === "windows2" ? windows : layout === "macos" ? macos : layout === "ipad" ? ipad : landscape;
   return <div className="layout-preview" data-preview={layout} aria-hidden="true">
     <img className="layout-preview-backdrop" src={wallpaper} alt="" width={480} height={270}/>
     {desktop ? <>
