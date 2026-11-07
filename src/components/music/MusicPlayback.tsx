@@ -43,6 +43,7 @@ export function MusicPlayback() {
       <h1 className="font-display text-2xl">{queueOpen ? "Queue" : "Music"}</h1>
       {busy && !queueOpen && <p role="status" className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin"/>Searching…</p>}
       {unavailable && !queueOpen && <p className="mt-4 text-sm text-muted-foreground">Couldn't find that one. <a className="text-primary underline" target="_blank" rel="noopener noreferrer" href={`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`}>{query}</a></p>}
+      {player.status === "Couldn't play that one" && player.queue[player.cur] && <p role="status" className="mt-4 text-sm text-muted-foreground">Couldn't play that one. <a className="text-primary underline" target="_blank" rel="noopener noreferrer" href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${player.queue[player.cur]?.artist ?? ""} ${player.queue[player.cur]?.title ?? ""}`)}`}>Open on YouTube</a></p>}
       <ol className="mt-4 divide-y divide-border">
         {rows.map((song, index) => <li key={`${song.id}-${index}`} className="flex min-w-0 items-center gap-2 py-2">
           <Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal px-2 py-2 text-left" aria-label={`Play ${song.title}`} onClick={() => play(rows, index)}>
