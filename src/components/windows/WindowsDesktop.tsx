@@ -1,8 +1,8 @@
 import { signOutAll } from "@/lib/auth";
-import { Suspense, useEffect, useReducer, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useReducer, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { Rnd } from "react-rnd";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Film, Gamepad2, LayoutGrid, Maximize2, Minus, Monitor, PanelLeft, Plus, Power, Search, Settings, Square, Volume2, Wifi, X, ExternalLink, ChevronRight } from "lucide-react";
+import { ArrowDownUp, Download, FilePlus2, FileText, Film, Folder, FolderPlus, Gamepad2, HardDrive, Home, Image, LayoutGrid, LayoutList, Maximize2, Minus, Monitor, Music, Palette, PanelLeft, Plus, Power, RefreshCw, Search, Settings, Square, Trash2, Volume2, Wifi, X, ExternalLink, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +21,7 @@ import { DESKTOP_APPS, DesktopAppContent, desktopAppInfo, useLauncherApps, type 
 import { DesktopWidgets } from "@/components/astra/DesktopWidgets";
 import { WebsiteFullscreenButton } from "@/components/FullscreenButton";
 import { removeDesktopShortcut, type DesktopShortcut } from "@/lib/windows/desktop-shortcuts";
+import { makeDesktopItem, normalizedRectangle, rectanglesIntersect, type DesktopItem, type DesktopItemKind, type DesktopRectangle } from "@/lib/windows/desktop-items";
 
 const APPS = DESKTOP_APPS;
 const appInfo = desktopAppInfo;
@@ -28,14 +29,30 @@ let serial = 0;
 const uid = () => `desktop-${++serial}`;
 const tabFor = (app: DesktopApp): WindowTab => ({ id: uid(), app, title: appInfo(app).title });
 
-export function WindowsDesktop({ children, desktopOnly = false }: { children?: ReactNode; desktopOnly?: boolean }) {
-  const prefs = usePrefs(); const look = getAppearance(prefs, "windows");
+function Windows2Explorer({ items, onOpen, onOpenItem }: { items: DesktopItem[]; onOpen: (app: DesktopApp, title?: string) => void; onOpenItem: (item: DesktopItem) => void }) {
+  const places = [{ name: "Desktop", icon: Monitor, app: "home" as const }, { name: "Downloads", icon: Download, app: "web" as const }, { name: "Documents", icon: FileText, app: "home" as const }, { name: "Pictures", icon: Image, app: "home" as const }, { name: "Music", icon: Music, app: "music" as const }, { name: "Videos", icon: Film, app: "movies" as const }];
+  return <div className="win2-explorer"><aside><strong><Home/>Home</strong>{places.map(place => <Button key={place.name} variant="ghost" onClick={() => onOpen(place.app, place.name)}><place.icon/>{place.name}</Button>)}<span>This PC</span><Button variant="ghost" onClick={() => onOpen("home", "This PC")}><HardDrive/>Local Disk</Button></aside><main><div className="win2-explorer-command"><Button variant="ghost" size="sm"><Plus/>New</Button><span/><Button variant="ghost" size="sm">Cut</Button><Button variant="ghost" size="sm">Copy</Button><Button variant="ghost" size="sm">Paste</Button><Button variant="ghost" size="sm">Rename</Button><Button variant="ghost" size="sm">Delete</Button></div><div className="win2-explorer-address"><Home/><ChevronRight/>Home</div><div className="win2-explorer-content"><h2>Quick access</h2><div className="win2-folder-grid">{places.map(place => <Button key={place.name} variant="ghost" onDoubleClick={() => onOpen(place.app, place.name)} onClick={() => onOpen(place.app, place.name)}><span className="win2-folder-art"><place.icon/></span><span><strong>{place.name}</strong><small>Stored locally</small></span></Button>)}</div><h2>Recent files</h2>{items.length ? <div className="win2-recent-items">{items.map(item => <Button key={item.id} variant="ghost" onClick={() => onOpenItem(item)}>{item.kind === "folder" ? <Folder/> : <FileText/>}<span>{item.name}</span><small>{item.kind === "folder" ? "File folder" : "Text Document"}</small></Button>)}</div> : <div className="win2-empty-recent"><FileText/><strong>Your recent activity will show here</strong><span>Create a folder or text document from the desktop.</span></div>}</div></main></div>;
+}
+
+function Windows2ItemEditor({ item, onChange }: { item: DesktopItem; onChange: (content: string) => void }) {
+  if (item.kind === "folder") return <div className="win2-item-empty"><Folder/><h2>{item.name}</h2><p>This folder is empty.</p></div>;
+  return <div className="win2-text-editor"><div><FileText/><span>{item.name}.txt</span></div><textarea aria-label={`${item.name} contents`} value={item.content} onChange={event => onChange(event.target.value)} placeholder="Start typing…"/></div>;
+}
+ 
+export function WindowsDesktop({ children, desktopOnly = false, modern = false }: { children?: ReactNode; desktopOnly?: boolean; modern?: boolean }) {
+  const prefs = usePrefs(); const look = getAppearance(prefs, modern ? "windows2" : "windows");
   const { user } = useAuth(); const navigate = useNavigate();
   const path = useRouterState({ select: s => s.location.pathname });
   const [state, dispatch] = useReducer(desktopReducer, { windows: [], active: null });
   const [start, setStart] = useState(false); const [tasks, setTasks] = useState(false); const [quick, setQuick] = useState(false);
   const [query, setQuery] = useState(""); const [addTab, setAddTab] = useState<string | null>(null);
   const [closing, setClosing] = useState<string[]>([]);
+  const [items, setItems] = useState<DesktopItem[]>([]);
+  const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; itemId?: string } | null>(null);
+  const [selection, setSelection] = useState<DesktopRectangle | null>(null);
+  const [iconSize, setIconSize] = useState<"small" | "medium" | "large">("medium");
+  const dragSelection = useRef<{ start: { x: number; y: number }; moved: boolean } | null>(null);
   const [now, setNow] = useState(new Date()); const [area, setArea] = useState({ width: 1280, height: 800 });
   const workspace = useRef<HTMLDivElement>(null);
   const routeId = useRef<string | null>(null);
@@ -47,12 +64,25 @@ export function WindowsDesktop({ children, desktopOnly = false }: { children?: R
     return () => { observer.disconnect(); clearInterval(timer); };
   }, []);
   const launcher = useLauncherApps();
-  const open = (app: DesktopApp, windowId?: string) => {
+  const open = (app: DesktopApp, windowIdOrTitle?: string) => {
     if (app === "music") { setStart(false); setTasks(false); setAddTab(null); setQuery(""); void navigate({ to: "/music" }); return; }
-    const tab = tabFor(app);
-    if (windowId) dispatch({ type: "tab", id: windowId, tab });
+    const existingWindow = state.windows.some(w => w.id === windowIdOrTitle) ? windowIdOrTitle : undefined;
+    const tab = { ...tabFor(app), title: windowIdOrTitle && !existingWindow ? windowIdOrTitle : appInfo(app).title };
+    if (existingWindow) dispatch({ type: "tab", id: existingWindow, tab });
     else dispatch({ type: "open", window: makeWindow(uid(), tab, state.windows.length) });
-    setStart(false); setTasks(false); setAddTab(null); setQuery("");
+    setStart(false); setTasks(false); setAddTab(null); setQuery(""); setContextMenu(null);
+  };
+  const openItem = (item: DesktopItem) => {
+    dispatch({ type: "open", window: makeWindow(uid(), { id: uid(), app: "home", title: item.name, itemId: item.id }, state.windows.length) });
+    setContextMenu(null);
+  };
+  const openRecycleBin = () => dispatch({ type: "open", window: makeWindow(uid(), { id: uid(), app: "home", title: "Recycle Bin", itemId: "recycle" }, state.windows.length) });
+  const createItem = (kind: DesktopItemKind) => { setItems(previous => [...previous, makeDesktopItem(kind, previous, uid())]); setContextMenu(null); };
+  const showContext = (event: ReactMouseEvent, itemId?: string) => {
+    event.preventDefault(); event.stopPropagation();
+    const rect = workspace.current?.getBoundingClientRect(); if (!rect) return;
+    setContextMenu({ x: Math.max(8, Math.min(event.clientX - rect.left, rect.width - 244)), y: Math.max(8, Math.min(event.clientY - rect.top, rect.height - 360)), itemId });
+    setStart(false); setQuick(false); setTasks(false);
   };
   const launchShortcut = (shortcut: DesktopShortcut) => {
     if (shortcut.kind === "cloud") { window.open(`/play?url=${encodeURIComponent(shortcut.url)}&name=${encodeURIComponent(shortcut.title)}`, "_blank", "noopener"); return; }
@@ -71,7 +101,7 @@ export function WindowsDesktop({ children, desktopOnly = false }: { children?: R
   }, [path, desktopOnly]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setStart(false); setTasks(false); setQuick(false); setAddTab(null); }
+      if (e.key === "Escape") { setStart(false); setTasks(false); setQuick(false); setAddTab(null); setContextMenu(null); setSelection(null); }
       if (e.altKey && e.key === "Tab") { e.preventDefault(); const index = state.windows.findIndex(w => w.id === state.active); const next = state.windows[(index + 1) % state.windows.length]; if (next) dispatch({ type: "focus", id: next.id }); }
     };
     window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
@@ -84,9 +114,41 @@ export function WindowsDesktop({ children, desktopOnly = false }: { children?: R
   const fullWindow = state.windows.some(w => !w.minimized && (w.mode === "maximized" || area.width < 640));
   const patch = (id: string, value: Partial<DesktopWindow>) => dispatch({ type: "patch", id, patch: value });
   const appButton = (app: DesktopAppInfo, target?: string) => <Button key={app.id} variant="ghost" className="windows-app-button" onClick={() => open(app.id, target)}><span className="windows-app-icon" data-tone={app.tone}><AppIcon app={app.id}/></span><span>{app.title}</span></Button>;
-  const home = <div className="windows-home"><header><span className="text-xs text-muted-foreground">BIRCHBLOCK</span><h1 className="mt-2 text-3xl font-semibold">Home</h1><p className="mt-2 text-sm text-muted-foreground">{String(name)}’s workspace</p></header><h2 className="mt-8 mb-4 text-sm font-semibold">Your apps</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{APPS.filter(a => a.id !== "home").map(a => appButton(a))}</div><div className="mt-8 flex items-center justify-between border-t pt-5"><div><p className="text-sm font-medium">Personalization</p><p className="mt-1 text-xs text-muted-foreground">Windows appearance</p></div><Button variant="ghost" onClick={() => open("settings")}><Settings/><ChevronRight/></Button></div></div>;
-  const renderApp = (tab: WindowTab) => <DesktopAppContent tab={tab} onOpen={app => open(app)} home={home}>{children}</DesktopAppContent>;
-  return <div data-full-window={fullWindow} className="windows-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
+  const home = modern ? <Windows2Explorer items={items} onOpen={(app, title) => open(app, title)} onOpenItem={openItem}/> : <div className="windows-home"><header><span className="text-xs text-muted-foreground">BIRCHBLOCK</span><h1 className="mt-2 text-3xl font-semibold">Home</h1><p className="mt-2 text-sm text-muted-foreground">{String(name)}’s workspace</p></header><h2 className="mt-8 mb-4 text-sm font-semibold">Your apps</h2><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{APPS.filter(a => a.id !== "home").map(a => appButton(a))}</div><div className="mt-8 flex items-center justify-between border-t pt-5"><div><p className="text-sm font-medium">Personalization</p><p className="mt-1 text-xs text-muted-foreground">Windows appearance</p></div><Button variant="ghost" onClick={() => open("settings")}><Settings/><ChevronRight/></Button></div></div>;
+  const renderApp = (tab: WindowTab) => {
+    if (modern && tab.itemId === "recycle") return <div className="win2-item-empty"><Trash2/><h2>Recycle Bin</h2><p>Recycle Bin is empty.</p></div>;
+    const item = modern && tab.itemId ? items.find(row => row.id === tab.itemId) : undefined;
+    if (item) return <Windows2ItemEditor item={item} onChange={content => setItems(previous => previous.map(row => row.id === item.id ? { ...row, content } : row))}/>;
+    return <DesktopAppContent tab={tab} onOpen={app => open(app)} home={home}>{children}</DesktopAppContent>;
+  };
+  const modernIcon = (id: string, title: string, icon: ReactNode, launch: () => void, item?: DesktopItem) => <Button key={id} data-win2-icon={id} data-selected={selectedIcons.includes(id)} variant="ghost" className="windows-shortcut win2-desktop-icon" aria-label={`Open ${title}`} aria-pressed={selectedIcons.includes(id)} onClick={() => setSelectedIcons([id])} onDoubleClick={launch} onKeyDown={event => { if (event.key === "Enter") launch(); }} onContextMenu={event => showContext(event, item?.id)}><span className="win2-desktop-icon-art">{icon}</span><span>{title}</span></Button>;
+  const beginSelection = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button,input,textarea,.windows-window,.desktop-widget-panel")) { setContextMenu(null); return; }
+    setStart(false); setQuick(false); setTasks(false); setContextMenu(null); setSelectedIcons([]);
+    if (!modern || event.button !== 0) return;
+    const rect = workspace.current?.getBoundingClientRect(); if (!rect) return;
+    const start = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    dragSelection.current = { start, moved: false };
+    setSelection({ left: start.x, right: start.x, top: start.y, bottom: start.y });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveSelection = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragSelection.current; const rect = workspace.current?.getBoundingClientRect(); if (!drag || !rect) return;
+    const end = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    if (Math.abs(end.x - drag.start.x) + Math.abs(end.y - drag.start.y) > 4) drag.moved = true;
+    setSelection(normalizedRectangle(drag.start, end));
+  };
+  const finishSelection = () => {
+    const drag = dragSelection.current; const rect = workspace.current?.getBoundingClientRect();
+    if (drag?.moved && selection && rect) {
+      const clientBox = { left: selection.left + rect.left, right: selection.right + rect.left, top: selection.top + rect.top, bottom: selection.bottom + rect.top };
+      const selected = Array.from(workspace.current?.querySelectorAll<HTMLElement>("[data-win2-icon]") ?? []).filter(node => rectanglesIntersect(clientBox, node.getBoundingClientRect())).map(node => node.dataset["win2Icon"] ?? "");
+      setSelectedIcons(selected);
+    }
+    dragSelection.current = null; setSelection(null);
+  };
+  return <div data-full-window={fullWindow} className={cn("windows-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground", modern && "windows2-desktop")}>
     {look.artwork && <WallpaperMedia src={look.customBg || wallpaper} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="windows-wallpaper absolute inset-0 size-full object-cover"/>}
     <WallpaperEffects/>
     <DesktopStatusBar onApps={() => { setStart(!start); setQuick(false); }} onSettings={() => { setQuick(!quick); setStart(false); }}/>
