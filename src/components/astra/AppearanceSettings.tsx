@@ -17,6 +17,7 @@ import alpineMotion from "@/assets/alpine-motion.mp4.asset.json";
 import { WallpaperCatalog } from "./WallpaperCatalog";
 import { AppearancePreview } from "./AppearancePreview";
 import { PersonalizationControls } from "./PersonalizationControls";
+import { LayoutAppearanceControls } from "./LayoutAppearanceControls";
 import { toast } from "sonner";
 
 function Setting({ label, children }: { label: string; children: ReactNode }) {

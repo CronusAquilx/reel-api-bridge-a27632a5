@@ -95,6 +95,7 @@ export function AppleDesktop({ variant, children }: { variant: Variant; children
 
   return <div data-apple={variant} data-full-window={fullApp} className="apple-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
     {look.artwork && <WallpaperMedia src={look.customBg || (mac ? macWallpaper : ipadWallpaper)} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="absolute inset-0 size-full object-cover"/>}
+    <div className="appearance-wallpaper-overlay"/>
     <WallpaperEffects/>
 
     {mac ? <header className="apple-menubar relative z-[320] flex shrink-0 items-center gap-0.5 px-2">

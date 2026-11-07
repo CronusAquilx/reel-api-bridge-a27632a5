@@ -151,6 +151,7 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
   };
   return <div data-full-window={fullWindow} className={cn("windows-desktop fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground", modern && "windows2-desktop")}>
     {look.artwork && <WallpaperMedia src={look.customBg || (modern ? windows2Wallpaper : wallpaper)} type={look.wallpaperType} poster={look.wallpaperPoster} playback={look.wallpaperPlayback} reduceMotion={look.reduceMotion} className="windows-wallpaper absolute inset-0 size-full object-cover"/>}
+    <div className="appearance-wallpaper-overlay"/>
     <WallpaperEffects/>
     {!modern && <DesktopStatusBar onApps={() => { setStart(!start); setQuick(false); }} onSettings={() => { setQuick(!quick); setStart(false); }}/>}
     <div ref={workspace} data-icon-size={iconSize} className="windows-workspace relative min-h-0 flex-1" onPointerDown={beginSelection} onPointerMove={moveSelection} onPointerUp={finishSelection} onPointerCancel={finishSelection} onContextMenu={event => { if (!modern || (event.target as HTMLElement).closest(".windows-window,.desktop-widget-panel")) return; showContext(event); }}>
