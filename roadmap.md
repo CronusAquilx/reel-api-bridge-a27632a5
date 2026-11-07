@@ -1,5 +1,11 @@
 # Birchbeat import roadmap
 
+## Current request — distinct per-layout personalization
+- [ ] Extend saved appearance profiles with per-layout app shape, orientation, size, font, wallpaper overlay, and shell-specific taskbar/icon controls.
+- [ ] Add layout-aware Settings controls for PlayStation, Xbox, Wii, Neutral, Windows, Windows 2.0, macOS, iPad, and Switch.
+- [ ] Apply the saved options to each real shell without changing another layout's profile or gameplay's temporary styling.
+- [ ] Run focused appearance tests and compilation; broad visual testing remains user-owned.
+
 ## Current request — Music collections and Windows 2.0
 - [x] Add playlist creation/deletion, key-free album browsing and album-track playback without changing full-song resolution.
 - [x] Keep the original Windows layout and add separately saved Windows 2.0 with Windows 11-style desktop, Explorer, Start and taskbar presentation.
