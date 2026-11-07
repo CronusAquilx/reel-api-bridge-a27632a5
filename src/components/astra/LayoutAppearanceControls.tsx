@@ -6,7 +6,7 @@ type Patch = (patch: Partial<AppearanceProfile>) => void;
 type Option<T extends string> = { value: T; label: string };
 
 function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: Option<T>[]; onChange: (value: T) => void }) {
-  return <label className="personalization-control"><span>{label}</span><Select value={value} onValueChange={onChange}><SelectTrigger aria-label={label} className="w-44"><SelectValue /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></label>;
+  return <div className="personalization-control"><span>{label}</span><Select value={value} onValueChange={onChange}><SelectTrigger aria-label={label} className="w-44"><SelectValue /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></div>;
 }
 
 const shellNames: Partial<Record<AppearanceLayout, string>> = {
