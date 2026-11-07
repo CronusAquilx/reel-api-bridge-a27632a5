@@ -1,5 +1,12 @@
 # Birchbeat import roadmap
 
+## Current request — Music collections and Windows 2.0
+- [ ] Add working playlist and album browsing/creation to the shared Music app without changing playback sources.
+- [ ] Keep the original Windows layout and add a separately selectable Windows 2.0 layout with Windows 11-style desktop interactions.
+- [ ] Add desktop right-click actions, new folders/files, display settings, and left-drag selection to Windows 2.0.
+- [ ] Remove the duplicate in-app music bar so only the shared top bar remains.
+- [ ] Run focused checks only; broad listening and visual testing remains user-owned.
+
 ## Current request — song switching and hidden video
 - [x] Isolate each playback attempt so failed or delayed YouTube events cannot break later songs; recover with bounded retries and alternative full-song results.
 - [x] Remove the visible video panel while keeping shared music controls; ten focused checks pass and preview compilation is clean. Live listening could not be checked because the local preview stayed on its opening splash.
