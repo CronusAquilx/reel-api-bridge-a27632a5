@@ -125,6 +125,9 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
   const modernIcon = (id: string, title: string, icon: ReactNode, launch: () => void, item?: DesktopItem) => <Button key={id} data-win2-icon={id} data-selected={selectedIcons.includes(id)} variant="ghost" className="windows-shortcut win2-desktop-icon" aria-label={`Open ${title}`} aria-pressed={selectedIcons.includes(id)} onClick={() => setSelectedIcons([id])} onDoubleClick={launch} onKeyDown={event => { if (event.key === "Enter") launch(); }} onContextMenu={event => showContext(event, item?.id)}><span className="win2-desktop-icon-art">{icon}</span><span>{title}</span></Button>;
   const beginSelection = (event: ReactPointerEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
+    // React portal events bubble through this component even when their DOM is outside the workspace.
+    // Never turn a Settings dropdown click into desktop drag selection or capture its pointer.
+    if (!event.currentTarget.contains(target)) return;
     if (target.closest("button,input,textarea,.windows-window,.desktop-widget-panel")) { setContextMenu(null); return; }
     setStart(false); setQuick(false); setTasks(false); setContextMenu(null); setSelectedIcons([]);
     if (!modern || event.button !== 0) return;
