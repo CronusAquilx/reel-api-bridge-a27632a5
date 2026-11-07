@@ -26,9 +26,12 @@ interface YTPlayer { loadVideoById(id: string): void; playVideo(): void; pauseVi
 type YTWindow = Window & { YT?: { Player: new (el: HTMLElement, options: Record<string, unknown>) => YTPlayer }; onYouTubeIframeAPIReady?: () => void };
 let yt: YTPlayer | null = null;
 let ytReady: Promise<YTPlayer> | null = null;
+let cancelYoutubeMount: (() => void) | null = null;
 let candidates: string[] = [];
 let candidateIndex = 0;
 let ytGeneration = 0;
+let searchedAlternatives = false;
+let retriedPlayer = false;
 let poll: ReturnType<typeof setInterval> | null = null;
 let playbackRequest: AbortController | null = null;
 let playbackWatchdog: ReturnType<typeof setTimeout> | null = null;
@@ -53,47 +56,95 @@ function ensure() {
   audio.addEventListener("ended", () => next());
   audio.addEventListener("error", () => { if (state.mode === "audio") set({ paused: true, loading: false, status: "Audio unavailable — try YouTube" }); });
 }
-function youtubePlayer(): Promise<YTPlayer> {
+function resetYoutubePlayer() {
+  // Invalidate before destroy: a failed iframe can emit delayed events while switching.
+  ytGeneration++;
+  cancelYoutubeMount?.(); cancelYoutubeMount = null;
+  const previous = yt; yt = null; ytReady = null;
+  try { previous?.destroy(); } catch { /* Already detached. */ }
+  document.querySelectorAll(".qaisify-playback-host").forEach(el => el.remove());
+}
+function youtubePlayer(my: number): Promise<YTPlayer> {
   if (yt) return Promise.resolve(yt);
   if (ytReady) return ytReady;
   const win = window as YTWindow;
+  const generation = ytGeneration;
+  const active = () => generation === ytGeneration && my === playId && !playbackRequest?.signal.aborted;
   ytReady = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => { ytReady = null; reject(new Error("YouTube player unavailable")); }, 8000);
+    let mounted = false;
+    let instance: YTPlayer | null = null;
+    const fail = (message: string) => { clearTimeout(timer); cancelYoutubeMount = null; ytReady = null; try { instance?.destroy(); } catch { /* Detached. */ } reject(new Error(message)); };
+    const timer = setTimeout(() => fail("YouTube player unavailable"), 8000);
+    cancelYoutubeMount = () => fail("Playback changed");
     const mount = () => {
-      if (!win.YT?.Player) return;
+      if (!active() || mounted || !win.YT?.Player) return;
+      mounted = true;
       const host = document.createElement("div"); host.id = "qaisify-playback-host"; host.className = "qaisify-playback-host";
+      host.setAttribute("aria-hidden", "true");
       document.body.appendChild(host);
-      new win.YT.Player(host, { width: 320, height: 180, playerVars: { playsinline: 1, rel: 0, origin: location.origin, widget_referrer: location.href }, events: {
-        onReady: (event: { target: YTPlayer }) => { clearTimeout(timer); yt = event.target; yt.setVolume(state.volume * 100); resolve(yt); },
+      instance = new win.YT.Player(host, { width: 320, height: 200, playerVars: { playsinline: 1, rel: 0, origin: location.origin, widget_referrer: location.href }, events: {
+        onReady: (event: { target: YTPlayer }) => {
+          if (!active()) { event.target.destroy(); return; }
+          clearTimeout(timer); cancelYoutubeMount = null; yt = event.target;
+          const frame = document.querySelector<HTMLIFrameElement>("iframe.qaisify-playback-host");
+          if (frame) { frame.referrerPolicy = "strict-origin-when-cross-origin"; frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true"); }
+          yt.setVolume(state.volume * 100); resolve(yt);
+        },
         onStateChange: (event: { data: number }) => {
-          if (state.mode !== "video" || ytGeneration !== playId) return;
+          if (state.mode !== "video" || !active()) return;
           if (event.data === 1) { recordPlayback(); set({ paused: false, loading: false, status: "YouTube · may have ads" }); stopPolling(); poll = setInterval(() => { if (yt && state.mode === "video") set({ time: yt.getCurrentTime() || 0, dur: yt.getDuration() || state.dur }); }, 250); }
           else if (event.data === 2) { stopPolling(); set({ paused: true, loading: false }); }
           else if (event.data === 3) set({ loading: true });
           else if (event.data === 0) next();
         },
         onError: (event: { data: number }) => {
-          if (state.mode !== "video" || ytGeneration !== playId) return;
-          const t = state.queue[state.cur];
-          if (event.data === 100 && candidates[candidateIndex + 1] && yt) {
-            candidateIndex++; yt.loadVideoById(candidates[candidateIndex] ?? "");
-            set({ loading: true, status: "Trying the next result…" });
-          } else if (t) {
-            stopPolling(); yt?.stopVideo();
-            set({ mode: null, status: "Couldn't play that one — trying a preview…" });
-            void audioFallback(t, playId);
-          }
+          if (state.mode !== "video" || !active()) return;
+          void recoverYoutube(my, event.data);
         },
+        onAutoplayBlocked: () => { if (active() && state.mode === "video") set({ paused: true, loading: false, status: "Press play to start your song" }); },
       } });
     };
     if (win.YT?.Player) mount();
     else {
       const previous = win.onYouTubeIframeAPIReady;
       win.onYouTubeIframeAPIReady = () => { previous?.(); mount(); };
-      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) { const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => { clearTimeout(timer); ytReady = null; reject(new Error("YouTube is blocked on this network")); }; document.head.appendChild(script); }
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) { const script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.onerror = () => { script.remove(); fail("YouTube is blocked on this network"); }; document.head.appendChild(script); }
     }
   });
   return ytReady;
+}
+async function startYoutube(my: number) {
+  const id = candidates[candidateIndex];
+  if (!id || my !== playId || playbackRequest?.signal.aborted) return;
+  const player = await youtubePlayer(my);
+  if (my !== playId || playbackRequest?.signal.aborted) return;
+  set({ mode: "video", loading: true, status: "Starting your song…" });
+  player.loadVideoById(id); player.setVolume(state.volume * 100); player.setPlaybackRate?.(state.speed);
+  if (playbackWatchdog) clearTimeout(playbackWatchdog);
+  playbackWatchdog = setTimeout(() => { if (my === playId && state.loading && state.mode === "video") set({ loading: false, paused: true, status: "Press play to start your song" }); }, 12000);
+}
+async function recoverYoutube(my: number, code: number) {
+  const t = state.queue[state.cur];
+  const signal = playbackRequest?.signal;
+  if (!t || !signal || signal.aborted || my !== playId) return;
+  stopPolling(); resetYoutubePlayer();
+  if (playbackWatchdog) clearTimeout(playbackWatchdog);
+  set({ mode: null, loading: true, paused: true, status: "Finding another playable version…" });
+  try {
+    // A transport/embed failure gets one clean reset, not an endless retry loop.
+    if ([5, 152, 153].includes(code) && !retriedPlayer) {
+      retriedPlayer = true; await startYoutube(my); return;
+    }
+    if (!searchedAlternatives) {
+      searchedAlternatives = true;
+      const results = await searchMusic(`${t.artist} ${t.title}`, signal, true);
+      if (my !== playId || signal.aborted) return;
+      candidates = [...new Set([...candidates, ...results.filter(row => !row.preview).map(row => row.id)])].slice(0, 5);
+    }
+    candidateIndex++;
+    if (candidates[candidateIndex]) { await startYoutube(my); return; }
+  } catch { /* Fall back only for the same requested song. */ }
+  if (my === playId && !signal.aborted) await audioFallback(t, my);
 }
 export function setServer(s: Server) { set({ server: s }); }
 let sleepTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -115,8 +166,8 @@ export async function playList(list: Track[], i: number) {
   ensure(); const t = list[i]; if (!t || !audio) return;
   cancelPlaybackRequest(); playbackRequest = new AbortController();
   const signal = playbackRequest.signal;
-  const my = ++playId; clearProxy(); stopPolling(); audio.pause(); audio.removeAttribute("src"); audio.load(); yt?.stopVideo();
-  candidates = []; candidateIndex = 0;
+  const my = ++playId; clearProxy(); stopPolling(); resetYoutubePlayer(); audio.pause(); audio.removeAttribute("src"); audio.load();
+  candidates = []; candidateIndex = 0; searchedAlternatives = false; retriedPlayer = false;
   set({ queue: list, cur: i, status: "Finding your song…", paused: true, loading: true, time: 0, dur: t.duration, mode: null, fallbackId: null });
   audio.playbackRate = state.speed;
   try {
@@ -126,12 +177,7 @@ export async function playList(list: Track[], i: number) {
     if (!first) { await audioFallback(t, my); return; }
     if (first.preview) { await audioFallback({ ...t, preview: first.preview }, my); return; }
     candidates = results.map(row => row.id); candidateIndex = 0;
-    const player = await youtubePlayer();
-    if (my !== playId || signal.aborted) return;
-    ytGeneration = my;
-    set({ mode: "video", status: "Starting YouTube…" });
-    player.loadVideoById(first.id); player.setVolume(state.volume * 100); player.setPlaybackRate?.(state.speed);
-    playbackWatchdog = setTimeout(() => { if (my === playId && state.loading && state.mode === "video") set({ loading: false, paused: true, status: "Press play to start YouTube" }); }, 12000);
+    await startYoutube(my);
   } catch { if (my === playId && !signal.aborted) await audioFallback(t, my); }
 }
 let proxyFrame: HTMLIFrameElement | null = null;
@@ -140,7 +186,7 @@ function clearProxy() { proxyFrame?.remove(); proxyFrame = null; if (typeof docu
 async function audioFallback(t: Track, my: number) {
   ensure();
   if (my !== playId || !audio || !playbackRequest || playbackRequest.signal.aborted) return;
-  stopPolling(); yt?.stopVideo();
+  stopPolling(); resetYoutubePlayer();
   if (playbackWatchdog) clearTimeout(playbackWatchdog);
   try {
     const preview = t.preview ? t : (await searchPreviews(`${t.artist} ${t.title}`, playbackRequest.signal))[0];
@@ -158,7 +204,7 @@ export function toggle() { ensure(); if (proxyFrame) { clearProxy(); set({ pause
 export function next() { const index = nextQueueIndex(state.cur, state.queue.length, state.repeat, state.shuffle); if (index >= 0) void playList(state.queue, index); else { audio?.pause(); yt?.pauseVideo(); stopPolling(); set({ paused: true, loading: false }); } }
 export function prev() { if (state.time > 3) { seek(0); return; } void playList(state.queue, Math.max(0, state.cur - 1)); }
 export function seek(t: number) { const time = Math.max(0, Math.min(t, state.dur)); if (state.mode === "audio" && audio) audio.currentTime = time; if (state.mode === "video") yt?.seekTo(time, true); set({ time }); }
-export function stop() { cancelPlaybackRequest(); playId++; clearProxy(); audio?.pause(); yt?.stopVideo(); stopPolling(); set({ cur: -1, queue: [], mode: null, paused: true, loading: false, fallbackId: null }); }
+export function stop() { cancelPlaybackRequest(); playId++; clearProxy(); if (typeof document !== "undefined") resetYoutubePlayer(); audio?.pause(); stopPolling(); set({ cur: -1, queue: [], mode: null, paused: true, loading: false, fallbackId: null }); }
 export function getAudio() { ensure(); return audio; }
 export function getPlayer() { return state; }
 export async function openMusicProxy(iframe: HTMLIFrameElement) { const t = state.queue[state.cur]; const videoId = state.fallbackId ?? candidates[candidateIndex]; if (!prefsRef || !t || !videoId) return; yt?.pauseVideo(); set({ paused: true, mode: null }); await openProxied(iframe, `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`, prefsRef); }
