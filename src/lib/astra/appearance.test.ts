@@ -40,7 +40,7 @@ describe("layout personalization", () => {
     const original = initialAppearance(DEFAULT_PREFS);
     let profiles = Object.fromEntries(["sony", "series", "wii", "neutral", "windows", "windows2", "macos", "ipad", "switch"].map(layout => [layout, original]));
     profiles = updateAppearance(profiles, "sony", original, { appIconShape: "circle", appLogoStyle: "outline", appArrangement: "list", fontFamily: "serif", wallpaperOverlay: "black" });
-    expect(profiles.sony).toMatchObject({ appIconShape: "circle", appLogoStyle: "outline", appArrangement: "list", fontFamily: "serif", wallpaperOverlay: "black" });
+    expect(profiles["sony"]).toMatchObject({ appIconShape: "circle", appLogoStyle: "outline", appArrangement: "list", fontFamily: "serif", wallpaperOverlay: "black" });
     for (const layout of ["series", "wii", "neutral", "windows", "windows2", "macos", "ipad", "switch"] as const) {
       expect(profiles[layout]).toMatchObject({ appIconShape: "native", appLogoStyle: "color", appArrangement: "native", fontFamily: "native", wallpaperOverlay: "native" });
     }
