@@ -32,7 +32,7 @@ export default function MovieCard({ movie, index = 0, showRank, compact }: Props
   const rating = movie.vote_average?.toFixed(1);
   const resolution = estimatedResolution(year);
   const rank = (index ?? 0) + 1;
-  const shortcut = prefs.layout === "windows" && prefs.console === "off" ? <Button variant="secondary" size="icon" className="absolute right-1 top-1 z-20 size-8" title="Add to desktop" aria-label={`Add ${title} to desktop`} onClick={() => { addDesktopShortcut({ id: `movie:${type}:${movie.id}`, kind: "movie", title, tmdbId: movie.id, mediaType: type, image: img(movie.poster_path) }); toast("Added to desktop"); }}><SquarePlus className="size-4"/></Button> : null;
+  const shortcut = (prefs.layout === "windows" || prefs.layout === "windows2") && prefs.console === "off" ? <Button variant="secondary" size="icon" className="absolute right-1 top-1 z-20 size-8" title="Add to desktop" aria-label={`Add ${title} to desktop`} onClick={() => { addDesktopShortcut({ id: `movie:${type}:${movie.id}`, kind: "movie", title, tmdbId: movie.id, mediaType: type, image: img(movie.poster_path) }); toast("Added to desktop"); }}><SquarePlus className="size-4"/></Button> : null;
 
   if (showRank && rank <= 10) {
     return (

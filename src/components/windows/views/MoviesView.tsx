@@ -46,7 +46,7 @@ const RECENT_KEY = "astra-movie-searches";
 
 export function MoviesView() {
   const prefs = usePrefs();
-  const native = prefs.layout === "windows" || prefs.console === "sony" || prefs.console === "series";
+  const native = (prefs.layout === "windows" || prefs.layout === "windows2") || prefs.console === "sony" || prefs.console === "series";
   const [category, setCategory] = useState<"home" | "movies" | "shows" | "list">("home");
   const [q, setQ] = useState("");
   const [recents, setRecents] = useState<string[]>([]);

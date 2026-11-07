@@ -20,7 +20,7 @@ const blank = (): Tab => ({ id: nextId++, title: "New tab", query: "", results: 
 export function WebView({ initialQ }: { initialQ?: string | undefined } = {}) {
   const search = useServerFn(webSearch);
   const prefs = usePrefs();
-  const native = prefs.layout === "windows" || prefs.console === "sony" || prefs.console === "series";
+  const native = (prefs.layout === "windows" || prefs.layout === "windows2") || prefs.console === "sony" || prefs.console === "series";
   const [tabs, setTabs] = useState<Tab[]>(() => [blank()]);
   const [active, setActive] = useState(tabs[0]?.id ?? 1);
   const [input, setInput] = useState(initialQ ?? "");

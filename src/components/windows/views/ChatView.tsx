@@ -16,7 +16,7 @@ import { usePrefs } from "@/lib/astra/prefs";
 
 export function ChatView() {
   const prefs = usePrefs();
-  const native = prefs.layout === "windows" || prefs.console === "sony" || prefs.console === "series";
+  const native = (prefs.layout === "windows" || prefs.layout === "windows2") || prefs.console === "sony" || prefs.console === "series";
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();

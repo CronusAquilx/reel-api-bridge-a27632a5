@@ -105,15 +105,16 @@ export function SettingsView() {
         </nav>
         <div className="settings-category-content min-w-0">
         {windows && <h2 className="settings-page-title">{TAB_LABELS[tab]}</h2>}
-        {tab === "Home" && <div className="windows-settings-home"><div className="settings-device"><img src={wallpaper} alt="Desktop wallpaper"/><div><h3>BirchBlock desktop</h3><span>Windows layout</span></div><Button variant="ghost" onClick={() => setTab("Layout")}><Monitor/>System</Button></div><div className="settings-recommendations"><section><h3>Recommended settings</h3>{(["Appearance","Privacy","Essences"] as const).map(t => { const Icon = TAB_ICONS[t]; return <Button key={t} variant="ghost" onClick={() => setTab(t)}><Icon/><span>{TAB_LABELS[t]}</span><ChevronRight/></Button>; })}</section><section><h3>Personalize your desktop</h3><img src={wallpaper} alt=""/><Button variant="secondary" onClick={() => setTab("Appearance")}><Palette/>Wallpaper & colors<ChevronRight/></Button></section></div><section className="settings-app-launchers"><h3>Applications</h3>{[{ name:"Music",icon:Music,path:"/music" as const },{name:"Movies & TV",icon:Film,path:"/movies" as const},{name:"Games",icon:Gamepad2,path:"/games" as const}].map(a => <Button key={a.name} variant="ghost" onClick={() => void navigate({ to:a.path })}><a.icon/>{a.name}<ChevronRight/></Button>)}</section></div>}
+        {tab === "Home" && <div className="windows-settings-home"><div className="settings-device"><img src={wallpaper} alt="Desktop wallpaper"/><div><h3>BirchBlock desktop</h3><span>{p.layout === "windows2" ? "Windows 2.0 layout" : "Windows layout"}</span></div><Button variant="ghost" onClick={() => setTab("Layout")}><Monitor/>System</Button></div><div className="settings-recommendations"><section><h3>Recommended settings</h3>{(["Appearance","Privacy","Essences"] as const).map(t => { const Icon = TAB_ICONS[t]; return <Button key={t} variant="ghost" onClick={() => setTab(t)}><Icon/><span>{TAB_LABELS[t]}</span><ChevronRight/></Button>; })}</section><section><h3>Personalize your desktop</h3><img src={wallpaper} alt=""/><Button variant="secondary" onClick={() => setTab("Appearance")}><Palette/>Wallpaper & colors<ChevronRight/></Button></section></div><section className="settings-app-launchers"><h3>Applications</h3>{[{ name:"Music",icon:Music,path:"/music" as const },{name:"Movies & TV",icon:Film,path:"/movies" as const},{name:"Games",icon:Gamepad2,path:"/games" as const}].map(a => <Button key={a.name} variant="ghost" onClick={() => void navigate({ to:a.path })}><a.icon/>{a.name}<ChevronRight/></Button>)}</section></div>}
         {tab === "Layout" && (
           <>
             <Card title="App layout">
               <Choice
                 value={p.layout}
-                onChange={(layout) => { set({ layout, console: "off", focus: "all" }); if (layout === "windows" || layout === "macos" || layout === "ipad") navigate({ to: "/desktop" }); else if (layout === "switch") navigate({ to: "/home" }); }}
+                onChange={(layout) => { set({ layout, console: "off", focus: "all" }); if (layout === "windows" || layout === "windows2" || layout === "macos" || layout === "ipad") navigate({ to: "/desktop" }); else if (layout === "switch") navigate({ to: "/home" }); }}
                 options={[
-                  { v: "windows", label: "Windows", sub: "Desktop, taskbar and app windows" },
+                  { v: "windows", label: "Windows", sub: "Original desktop, taskbar and app windows" },
+                  { v: "windows2", label: "Windows 2.0", sub: "Windows 11-style desktop, File Explorer and desktop menus" },
                   { v: "macos", label: "macOS", sub: "Menu bar, Dock, Spotlight and floating windows" },
                   { v: "ipad", label: "iPad", sub: "Home Screen, Dock and full-screen apps" },
                   { v: "switch", label: "Switch", sub: "Game tiles and a compact app dock" },
