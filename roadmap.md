@@ -1,8 +1,8 @@
 # Birchbeat import roadmap
 
 ## Current request — song switching and hidden video
-- [ ] Isolate each playback attempt so failed or delayed YouTube events cannot break later songs; recover with bounded retries and alternative full-song results.
-- [ ] Remove the visible video panel while keeping shared music controls and run only focused playback checks.
+- [x] Isolate each playback attempt so failed or delayed YouTube events cannot break later songs; recover with bounded retries and alternative full-song results.
+- [x] Remove the visible video panel while keeping shared music controls; ten focused checks pass and preview compilation is clean. Live listening could not be checked because the local preview stayed on its opening splash.
 
 ## Current request — full songs and previous Music interface
 - [x] Restore Qaisify navigation, artwork cards, library, liked songs, stats and settings without restoring old sources.
