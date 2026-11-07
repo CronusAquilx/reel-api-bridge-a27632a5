@@ -1126,7 +1126,7 @@ html[data-wallpaper-motion="zoom"] .reference-wallpaper { animation: wallpaper-z
 .qaisify-dj { margin-top: 30px; } .qaisify-dj summary { cursor: pointer; color: var(--muted-foreground); }
 .qaisify-queue { padding: 0 24px 24px; border-bottom: 1px solid var(--border); }
 .qaisify-source { max-width: 165px; min-width: 0; }
-.qaisify-playback-host { position: fixed; bottom: 112px; right: 12px; width: 320px; height: 180px; max-width: calc(100vw - 24px); border: 1px solid var(--border); border-radius: 8px; z-index: 80; background: var(--card); }
+.qaisify-playback-host { position: fixed; top: 0; left: -10000px; width: 320px; height: 200px; pointer-events: none; }
 @media (max-width: 720px) {
   .qaisify-application.qaisify-application.has-native-navigation { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto minmax(0,1fr); }
   .qaisify-application.qaisify-application .music-library-rail { grid-row: auto; flex-direction: row; padding: 8px; border-right: 0; border-bottom: 1px solid var(--border); }
@@ -1140,7 +1140,6 @@ html[data-wallpaper-motion="zoom"] .reference-wallpaper { animation: wallpaper-z
   .qaisify-application .music-main-inner { padding: 16px 12px 28px; }
   .qaisify-source { max-width: 135px; font-size: 11px; }
   .qaisify-application .music-card { width: 140px; }
-  .qaisify-playback-host { bottom: 100px; width: 240px; height: 135px; }
   .qaisify-playerbar > div { gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .qaisify-application .music-card { transition: none; } .qaisify-application .music-card:hover { transform: none; } }
