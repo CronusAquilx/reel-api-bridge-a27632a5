@@ -31,7 +31,7 @@ function ThemeStudio() {
 }
 function LayoutSwitcher() {
   const p = usePrefs();
-  const go = (l: string) => { const patch = ["windows", "macos", "ipad", "switch", "classic", "launcher"].includes(l) ? { layout: l as Prefs["layout"], console: "off" as const } : { console: l as Prefs["console"] }; setPrefs(patch); window.location.assign(visitDestination({ ...p, ...patch })); };
+  const go = (l: string) => { const patch = ["windows", "windows2", "macos", "ipad", "switch", "classic", "launcher"].includes(l) ? { layout: l as Prefs["layout"], console: "off" as const } : { console: l as Prefs["console"] }; setPrefs(patch); window.location.assign(visitDestination({ ...p, ...patch })); };
   return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{VISIBLE_LAYOUTS.map(l => <Button key={l} variant={activeLayout(p) === l ? "default" : "secondary"} className="h-20 text-base" onClick={() => go(l)}>{LAYOUT_NAMES[l]}</Button>)}</div>;
 }
 function UiTuner() {

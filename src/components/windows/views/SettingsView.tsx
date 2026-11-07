@@ -81,7 +81,7 @@ export function SettingsView() {
   const { data: devGames } = useDeveloperGameAccess();
   const { data: staffRole } = useStaffRole();
   const developer = Boolean(devGames) || Boolean(staffRole);
-  const windows = p.layout === "windows" && p.console === "off";
+  const windows = (p.layout === "windows" || p.layout === "windows2") && p.console === "off";
   const [tab, setTab] = useState<TabName>(windows ? "Home" : "Layout");
   const [filter, setFilter] = useState("");
   const set = (x: Partial<Prefs>) => setPrefs(x);
