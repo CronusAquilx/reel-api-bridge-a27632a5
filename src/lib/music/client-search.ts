@@ -39,6 +39,29 @@ export async function searchPreviews(query: string, signal: AbortSignal): Promis
     return (Array.isArray(data.data) ? data.data : []).filter((r: any) => typeof r.preview === "string" && r.preview).map((r: any) => track(String(r.id), r.title, r.artist?.name ?? "", r.album?.cover_medium ?? "", r.preview, 30, undefined));
   } catch { return []; }
 }
+export type MusicAlbum = { id: string; name: string; artist: string; art: string; trackCount: number };
+export function albumFromItunes(row: Record<string, any>): MusicAlbum | null {
+  if (!row.collectionId || !row.collectionName) return null;
+  return { id: String(row.collectionId), name: row.collectionName, artist: row.artistName ?? "Unknown artist", art: String(row.artworkUrl100 ?? "").replace("100x100", "600x600"), trackCount: Number(row.trackCount ?? 0) };
+}
+export function trackFromItunes(row: Record<string, any>): Track {
+  return { id: String(row.trackId), title: row.trackName ?? "", artist: row.artistName ?? "", artistId: String(row.artistId ?? ""), album: row.collectionName ?? "", albumId: String(row.collectionId ?? ""), art: String(row.artworkUrl100 ?? "").replace("100x100", "600x600"), duration: Math.round(Number(row.trackTimeMillis ?? 0) / 1000) || 30, preview: row.previewUrl ?? "", source: "itunes" };
+}
+/** Album metadata is key-free; songs still resolve through the shared full-song player. */
+export async function searchAlbums(query: string, signal: AbortSignal): Promise<MusicAlbum[]> {
+  try {
+    const data = await jsonp(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=18`, signal);
+    return (Array.isArray(data.results) ? data.results : []).map(albumFromItunes).filter((row: MusicAlbum | null): row is MusicAlbum => Boolean(row));
+  } catch { return []; }
+}
+export async function albumTracks(id: string, signal: AbortSignal): Promise<Track[]> {
+  if (!/^\d+$/.test(id)) return [];
+  try {
+    const data = await jsonp(`https://itunes.apple.com/lookup?id=${encodeURIComponent(id)}&entity=song`, signal);
+    return (Array.isArray(data.results) ? data.results : []).filter((row: any) => row.wrapperType === "track" && row.kind === "song" && row.trackId).map(trackFromItunes);
+  } catch { return []; }
+}
+
 export async function searchMusic(query: string, signal: AbortSignal, fullOnly = false): Promise<Track[]> {
   if (!query.trim() || signal.aborted) return [];
   for (const host of PIPED_SEARCH_HOSTS) {
