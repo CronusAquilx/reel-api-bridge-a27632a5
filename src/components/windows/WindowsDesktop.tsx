@@ -82,7 +82,7 @@ export function WindowsDesktop({ children, desktopOnly = false, modern = false }
   const showContext = (event: ReactMouseEvent, itemId?: string) => {
     event.preventDefault(); event.stopPropagation();
     const rect = workspace.current?.getBoundingClientRect(); if (!rect) return;
-    setContextMenu({ x: Math.max(8, Math.min(event.clientX - rect.left, rect.width - 244)), y: Math.max(8, Math.min(event.clientY - rect.top, rect.height - 360)), itemId });
+    setContextMenu({ x: Math.max(8, Math.min(event.clientX - rect.left, rect.width - 244)), y: Math.max(8, Math.min(event.clientY - rect.top, rect.height - 360)), ...(itemId ? { itemId } : {}) });
     setStart(false); setQuick(false); setTasks(false);
   };
   const launchShortcut = (shortcut: DesktopShortcut) => {

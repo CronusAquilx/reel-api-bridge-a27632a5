@@ -41,11 +41,11 @@ export async function searchPreviews(query: string, signal: AbortSignal): Promis
 }
 export type MusicAlbum = { id: string; name: string; artist: string; art: string; trackCount: number };
 export function albumFromItunes(row: Record<string, any>): MusicAlbum | null {
-  if (!row.collectionId || !row.collectionName) return null;
-  return { id: String(row.collectionId), name: row.collectionName, artist: row.artistName ?? "Unknown artist", art: String(row.artworkUrl100 ?? "").replace("100x100", "600x600"), trackCount: Number(row.trackCount ?? 0) };
+  if (!row["collectionId"] || !row["collectionName"]) return null;
+  return { id: String(row["collectionId"]), name: row["collectionName"], artist: row["artistName"] ?? "Unknown artist", art: String(row["artworkUrl100"] ?? "").replace("100x100", "600x600"), trackCount: Number(row["trackCount"] ?? 0) };
 }
 export function trackFromItunes(row: Record<string, any>): Track {
-  return { id: String(row.trackId), title: row.trackName ?? "", artist: row.artistName ?? "", artistId: String(row.artistId ?? ""), album: row.collectionName ?? "", albumId: String(row.collectionId ?? ""), art: String(row.artworkUrl100 ?? "").replace("100x100", "600x600"), duration: Math.round(Number(row.trackTimeMillis ?? 0) / 1000) || 30, preview: row.previewUrl ?? "", source: "itunes" };
+  return { id: String(row["trackId"]), title: row["trackName"] ?? "", artist: row["artistName"] ?? "", artistId: String(row["artistId"] ?? ""), album: row["collectionName"] ?? "", albumId: String(row["collectionId"] ?? ""), art: String(row["artworkUrl100"] ?? "").replace("100x100", "600x600"), duration: Math.round(Number(row["trackTimeMillis"] ?? 0) / 1000) || 30, preview: row["previewUrl"] ?? "", source: "itunes" };
 }
 /** Album metadata is key-free; songs still resolve through the shared full-song player. */
 export async function searchAlbums(query: string, signal: AbortSignal): Promise<MusicAlbum[]> {
